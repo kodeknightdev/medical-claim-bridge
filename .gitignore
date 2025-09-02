@@ -1,0 +1,42 @@
+# build output
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+.vscode/
+TestResults/
+*.received.*
+
+# secrets and local config
+.env
+*.tfvars
+!*.tfvars.example
+appsettings.*.local.json
+
+# terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf
+override.tf.json
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+models/*.joblib
+!models/.gitkeep
+
+# node / angular
+node_modules/
+dist/
+.angular/
+coverage/
+
+# os
+.DS_Store
