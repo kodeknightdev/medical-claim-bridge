@@ -11,6 +11,7 @@ public class IdentityDb(DbContextOptions<IdentityDb> options) : IdentityDbContex
     {
         base.OnModelCreating(builder);
         builder.HasDefaultSchema("identity");
+        builder.UseOpenIddict();
 
         builder.Entity<AppUser>(e =>
         {
