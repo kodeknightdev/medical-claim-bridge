@@ -23,6 +23,49 @@ namespace ClaimBridge.Identity.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("ClaimBridge.Identity.Data.ApiClientProfile", b =>
+                {
+                    b.Property<string>("ClientId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<Guid>("OrgId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("RateLimitPerMinute")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Scopes")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTimeOffset?>("SecretRotatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("ClientId");
+
+                    b.HasIndex("OrgId");
+
+                    b.ToTable("ApiClients", "identity");
+                });
+
             modelBuilder.Entity("ClaimBridge.Identity.Data.AppRole", b =>
                 {
                     b.Property<Guid>("Id")

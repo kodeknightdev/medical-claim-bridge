@@ -51,6 +51,7 @@ builder.Services.AddOpenIddict()
 
         o.AllowAuthorizationCodeFlow().RequireProofKeyForCodeExchange();
         o.AllowRefreshTokenFlow();
+        o.AllowClientCredentialsFlow();
 
         o.RegisterScopes(Scopes.OpenId, Scopes.Email, Scopes.Profile, Scopes.Roles, Scopes.OfflineAccess,
             CbScopes.Api, CbScopes.ClaimsRead, CbScopes.ClaimsSubmit);
@@ -82,6 +83,7 @@ builder.Services.AddOpenIddict()
     });
 
 builder.Services.AddScoped<TokenPrincipalFactory>();
+builder.Services.AddScoped<ApiClientService>();
 builder.Services.AddAntiforgery(o => o.Cookie.Name = "cb.af");
 builder.Services.AddAuthorization(o =>
 {

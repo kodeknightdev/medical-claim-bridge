@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using ClaimTypesEx = ClaimBridge.Contracts.Reference.ClaimTypesEx;
 using ClaimBridge.Identity.Auth;
 using ClaimBridge.Identity.Data;
 using Microsoft.AspNetCore;
@@ -5,6 +7,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -15,7 +18,9 @@ namespace ClaimBridge.Identity.Controllers;
 public class AuthorizationController(
     UserManager<AppUser> users,
     SignInManager<AppUser> signIn,
-    TokenPrincipalFactory principals) : Controller
+    TokenPrincipalFactory principals,
+    IOpenIddictApplicationManager applications,
+    IdentityDb db) : Controller
 {
     [HttpGet("~/connect/authorize"), HttpPost("~/connect/authorize")]
     public async Task<IActionResult> Authorize()
@@ -52,6 +57,9 @@ public class AuthorizationController(
         var request = HttpContext.GetOpenIddictServerRequest()
             ?? throw new InvalidOperationException("OpenID Connect request missing");
 
+        if (request.IsClientCredentialsGrantType())
+            return await ClientCredentialsAsync(request);
+
         if (request.IsAuthorizationCodeGrantType() || request.IsRefreshTokenGrantType())
         {
             var result = await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
@@ -65,6 +73,26 @@ public class AuthorizationController(
         }
 
         return ForbidWith(Errors.UnsupportedGrantType, "The grant type is not supported.");
+    }
+
+    private async Task<IActionResult> ClientCredentialsAsync(OpenIddictRequest request)
+    {
+        // OpenIddict has already authenticated the client and checked the requested scopes against its permissions
+        var application = await applications.FindByClientIdAsync(request.ClientId!);
+        var profile = await db.ApiClients.FindAsync(request.ClientId);
+        if (application is null || profile is null || profile.RevokedAt is not null)
+            return ForbidWith(Errors.InvalidClient, "The client is unknown or has been revoked.");
+
+        var identity = new ClaimsIdentity(TokenValidationParameters.DefaultAuthenticationType, Claims.Name, Claims.Role);
+        identity.SetClaim(Claims.Subject, request.ClientId)
+            .SetClaim(Claims.Name, profile.DisplayName)
+            .SetClaim(ClaimTypesEx.OrgId, profile.OrgId.ToString())
+            .SetClaim(ClaimTypesEx.RateLimit, profile.RateLimitPerMinute.ToString());
+
+        identity.SetScopes(request.GetScopes());
+        identity.SetResources(await principals.ResourcesForAsync(request.GetScopes()));
+        identity.SetDestinations(TokenPrincipalFactory.GetDestinations);
+        return SignIn(new ClaimsPrincipal(identity), OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
     [Authorize(AuthenticationSchemes = OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)]

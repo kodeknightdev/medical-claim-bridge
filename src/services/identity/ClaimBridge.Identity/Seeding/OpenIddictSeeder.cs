@@ -1,4 +1,5 @@
 using ClaimBridge.Contracts.Reference;
+using ClaimBridge.Identity.Auth;
 using OpenIddict.Abstractions;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 using CbScopes = ClaimBridge.Contracts.Reference.Scopes;
@@ -55,5 +56,14 @@ public static class OpenIddictSeeder
             await apps.CreateAsync(portal);
         else
             await apps.UpdateAsync(existing, portal);
+
+        var demoSecret = config["Seed:DemoClientSecret"];
+        if (!string.IsNullOrWhiteSpace(demoSecret) && await apps.FindByClientIdAsync(SeedIds.DemoClientId) is null)
+        {
+            var clients = services.GetRequiredService<ApiClientService>();
+            await clients.CreateAsync(SeedIds.SunriseOrg, "Sunrise practice management system",
+                [CbScopes.ClaimsSubmit, CbScopes.ClaimsRead], rateLimitPerMinute: 120, actor: "seed",
+                fixedClientId: SeedIds.DemoClientId, fixedSecret: demoSecret);
+        }
     }
 }
