@@ -1,3 +1,4 @@
+using ClaimBridge.Providers.Controllers;
 using ClaimBridge.Providers.Data;
 using ClaimBridge.Providers.Seeding;
 using ClaimBridge.ServiceDefaults;
@@ -13,6 +14,7 @@ builder.AddClaimBridgeAuth();
 builder.Services.AddDbContext<ProvidersDb>(o =>
     o.UseSqlServer(builder.Configuration.GetConnectionString("ProvidersDb")));
 builder.Services.AddPhiProtection(builder.Configuration);
+builder.Services.AddScoped<EnrollmentService>();
 builder.Services.AddHealthChecks().AddSqlServerReadiness(builder.Configuration, "ProvidersDb");
 builder.Services.AddControllers();
 

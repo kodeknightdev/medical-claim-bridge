@@ -55,6 +55,27 @@ public static class ProvidersSeeder
                 ]
             });
 
+        (Guid Org, string Payer, EnrollmentStatus Status)[] enrollments =
+        [
+            (SeedIds.SunriseOrg, SeedIds.PayerA, EnrollmentStatus.Active),
+            (SeedIds.SunriseOrg, SeedIds.PayerB, EnrollmentStatus.Active),
+            (SeedIds.SunriseOrg, SeedIds.PayerC, EnrollmentStatus.Active),
+            (SeedIds.LakesideOrg, SeedIds.PayerA, EnrollmentStatus.Active),
+            (SeedIds.LakesideOrg, SeedIds.PayerB, EnrollmentStatus.Active),
+            (SeedIds.LakesideOrg, SeedIds.PayerC, EnrollmentStatus.Pending),
+            (SeedIds.HarborOrg, SeedIds.PayerA, EnrollmentStatus.Active),
+            (SeedIds.HarborOrg, SeedIds.PayerB, EnrollmentStatus.Rejected),
+            (SeedIds.HarborOrg, SeedIds.PayerC, EnrollmentStatus.Active),
+        ];
+        foreach (var (org, payer, status) in enrollments)
+            db.Enrollments.Add(new PayerEnrollment
+            {
+                Id = Guid.NewGuid(), OrgId = org, PayerId = payer, Status = status, RequestedAt = now.AddDays(-400),
+                RequestedBy = "seed", DecidedAt = status == EnrollmentStatus.Pending ? null : now.AddDays(-395),
+                DecidedBy = status == EnrollmentStatus.Pending ? null : "seed",
+                Note = status == EnrollmentStatus.Rejected ? "Missing W-9 on file" : null
+            });
+
         await db.SaveChangesAsync();
     }
 }
