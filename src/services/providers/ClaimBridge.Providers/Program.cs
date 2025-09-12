@@ -26,7 +26,8 @@ app.UseAuthorization();
 app.MapControllers();
 
 if (app.Configuration.GetValue<bool>("Seed:Enabled"))
-    await app.MigrateAsync<ProvidersDb>((sp, db) => ProvidersSeeder.SeedAsync(db, TimeProvider.System));
+    await app.MigrateAsync<ProvidersDb>((sp, db) => ProvidersSeeder.SeedAsync(db,
+        sp.GetRequiredService<IPhiProtector>(), app.Configuration, TimeProvider.System));
 
 app.Run();
 

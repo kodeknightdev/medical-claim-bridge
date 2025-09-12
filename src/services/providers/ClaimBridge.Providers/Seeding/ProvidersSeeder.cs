@@ -1,12 +1,13 @@
 using ClaimBridge.Contracts.Reference;
 using ClaimBridge.Providers.Data;
+using ClaimBridge.ServiceDefaults.Phi;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClaimBridge.Providers.Seeding;
 
 public static class ProvidersSeeder
 {
-    public static async Task SeedAsync(ProvidersDb db, TimeProvider clock)
+    public static async Task SeedAsync(ProvidersDb db, IPhiProtector protector, IConfiguration config, TimeProvider clock)
     {
         foreach (var payer in PayerDirectory.All)
             if (!await db.Payers.AnyAsync(p => p.Id == payer.Id))
@@ -74,6 +75,16 @@ public static class ProvidersSeeder
                 RequestedBy = "seed", DecidedAt = status == EnrollmentStatus.Pending ? null : now.AddDays(-395),
                 DecidedBy = status == EnrollmentStatus.Pending ? null : "seed",
                 Note = status == EnrollmentStatus.Rejected ? "Missing W-9 on file" : null
+            });
+
+        var webhookSecret = config["Seed:WebhookSecret"];
+        if (!string.IsNullOrWhiteSpace(webhookSecret))
+            db.Webhooks.Add(new WebhookSubscription
+            {
+                Id = Guid.Parse("b2000000-0000-0000-0000-000000000001"), OrgId = SeedIds.SunriseOrg,
+                Url = config["Seed:WebhookUrl"] ?? "http://localhost:5190/webhooks/sunrise",
+                Events = "claim.accepted,claim.rejected,claim.paid,claim.denied,remittance.posted",
+                SigningSecretProtected = protector.Protect(webhookSecret), CreatedAt = now
             });
 
         await db.SaveChangesAsync();
