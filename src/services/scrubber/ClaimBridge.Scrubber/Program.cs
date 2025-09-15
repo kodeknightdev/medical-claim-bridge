@@ -1,5 +1,6 @@
 using ClaimBridge.Scrubber.CodeSetsCache;
 using ClaimBridge.Scrubber.Data;
+using ClaimBridge.Scrubber.Rules;
 using ClaimBridge.ServiceDefaults;
 using ClaimBridge.ServiceDefaults.Auth;
 using ClaimBridge.ServiceDefaults.Caching;
@@ -14,6 +15,9 @@ builder.Services.AddDbContext<ScrubberDb>(o =>
     o.UseSqlServer(builder.Configuration.GetConnectionString("ScrubberDb")));
 builder.Services.AddClaimBridgeCaching(builder.Configuration);
 builder.Services.AddScoped<CodeSetProvider>();
+builder.Services.AddBuiltInScrubRules();
+builder.Services.AddScoped<ScrubService>();
+builder.Services.AddSingleton<ScrubberMetrics>();
 builder.Services.AddHealthChecks().AddSqlServerReadiness(builder.Configuration, "ScrubberDb");
 builder.Services.AddControllers();
 
