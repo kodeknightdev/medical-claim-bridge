@@ -1,0 +1,41 @@
+{
+  "groupCodes": [
+    { "code": "CO", "name": "Contractual obligation", "explanation": "Provider write-off under the payer contract; the patient cannot be billed." },
+    { "code": "PR", "name": "Patient responsibility", "explanation": "Amount the patient owes (deductible, coinsurance, copay or non-covered service the patient agreed to)." },
+    { "code": "OA", "name": "Other adjustment", "explanation": "Adjustment that is neither contractual nor patient responsibility, for example a prior payment or a reversal." }
+  ],
+  "carc": [
+    { "code": "1", "category": "PatientResponsibility", "explanation": "Applied to the patient's deductible." },
+    { "code": "2", "category": "PatientResponsibility", "explanation": "Patient coinsurance share." },
+    { "code": "3", "category": "PatientResponsibility", "explanation": "Patient copay." },
+    { "code": "4", "category": "Coding", "explanation": "Modifier does not fit the procedure billed, or a required modifier is missing." },
+    { "code": "11", "category": "Coding", "explanation": "Diagnosis does not support the procedure billed." },
+    { "code": "16", "category": "MissingInformation", "explanation": "Claim lacks information needed to adjudicate; check the RARC for what is missing." },
+    { "code": "18", "category": "Duplicate", "explanation": "Exact duplicate of a claim or line already processed." },
+    { "code": "22", "category": "Eligibility", "explanation": "Another payer may be primary (coordination of benefits)." },
+    { "code": "27", "category": "Eligibility", "explanation": "Service date is after coverage ended." },
+    { "code": "29", "category": "TimelyFiling", "explanation": "Filing limit for this payer has passed." },
+    { "code": "45", "category": "Contractual", "explanation": "Charge exceeds the contracted fee schedule; the difference is written off." },
+    { "code": "50", "category": "MedicalNecessity", "explanation": "Payer considers the service not medically necessary for the diagnosis given." },
+    { "code": "96", "category": "NonCovered", "explanation": "Service is not covered by the patient's plan." },
+    { "code": "97", "category": "Bundling", "explanation": "Payment is included in another service paid on the same claim or date." },
+    { "code": "109", "category": "Eligibility", "explanation": "Claim was sent to the wrong payer for this patient." },
+    { "code": "119", "category": "NonCovered", "explanation": "Benefit maximum for the period has been reached." },
+    { "code": "151", "category": "Coding", "explanation": "Number of units or frequency billed is more than the payer supports." },
+    { "code": "167", "category": "Coding", "explanation": "Diagnosis is not covered for this service." },
+    { "code": "197", "category": "Authorization", "explanation": "Prior authorisation or precertification was required and not on file." },
+    { "code": "204", "category": "NonCovered", "explanation": "Service is not covered under the patient's current benefit plan." },
+    { "code": "242", "category": "Network", "explanation": "Rendering provider is not in the payer's network for this plan." },
+    { "code": "253", "category": "Contractual", "explanation": "Sequestration reduction required by federal rules." }
+  ],
+  "rarc": [
+    { "code": "N130", "explanation": "Check the plan benefit documents for coverage limits." },
+    { "code": "M15", "explanation": "Separately billed services were bundled into another service." },
+    { "code": "N56", "explanation": "Procedure code does not match the service documented." },
+    { "code": "M76", "explanation": "Diagnosis is missing, incomplete or invalid." },
+    { "code": "N54", "explanation": "Claim does not match the pre-certified service." },
+    { "code": "MA130", "explanation": "Claim was incomplete or invalid; correct and resubmit as a new claim." },
+    { "code": "N362", "explanation": "Units billed exceed the allowed amount for the date of service." },
+    { "code": "M127", "explanation": "Missing patient medical record for this service." }
+  ]
+}

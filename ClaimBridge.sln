@@ -21,6 +21,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "providers", "providers", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClaimBridge.Providers", "src\services\providers\ClaimBridge.Providers\ClaimBridge.Providers.csproj", "{C0B1545F-9731-464B-B95D-2F1667ED66A2}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scrubber", "scrubber", "{C4E66F78-7D10-63BB-63EB-27EB8B08FBE5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClaimBridge.Scrubber", "src\services\scrubber\ClaimBridge.Scrubber\ClaimBridge.Scrubber.csproj", "{99827EF6-67F3-4C70-B49E-C6484D1965A1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -79,6 +83,18 @@ Global
 		{C0B1545F-9731-464B-B95D-2F1667ED66A2}.Release|x64.Build.0 = Release|Any CPU
 		{C0B1545F-9731-464B-B95D-2F1667ED66A2}.Release|x86.ActiveCfg = Release|Any CPU
 		{C0B1545F-9731-464B-B95D-2F1667ED66A2}.Release|x86.Build.0 = Release|Any CPU
+		{99827EF6-67F3-4C70-B49E-C6484D1965A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99827EF6-67F3-4C70-B49E-C6484D1965A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99827EF6-67F3-4C70-B49E-C6484D1965A1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{99827EF6-67F3-4C70-B49E-C6484D1965A1}.Debug|x64.Build.0 = Debug|Any CPU
+		{99827EF6-67F3-4C70-B49E-C6484D1965A1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{99827EF6-67F3-4C70-B49E-C6484D1965A1}.Debug|x86.Build.0 = Debug|Any CPU
+		{99827EF6-67F3-4C70-B49E-C6484D1965A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99827EF6-67F3-4C70-B49E-C6484D1965A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99827EF6-67F3-4C70-B49E-C6484D1965A1}.Release|x64.ActiveCfg = Release|Any CPU
+		{99827EF6-67F3-4C70-B49E-C6484D1965A1}.Release|x64.Build.0 = Release|Any CPU
+		{99827EF6-67F3-4C70-B49E-C6484D1965A1}.Release|x86.ActiveCfg = Release|Any CPU
+		{99827EF6-67F3-4C70-B49E-C6484D1965A1}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -92,5 +108,7 @@ Global
 		{7B196A3E-3912-4969-87D2-97BDCDAA99F5} = {1BFC9479-12BF-35C3-06B8-42D89D95092B}
 		{3ACE4CE8-5A63-BF43-A51F-EF7F0616F6FC} = {984BB9B3-3FA3-BE33-9484-CAC21695A33C}
 		{C0B1545F-9731-464B-B95D-2F1667ED66A2} = {3ACE4CE8-5A63-BF43-A51F-EF7F0616F6FC}
+		{C4E66F78-7D10-63BB-63EB-27EB8B08FBE5} = {984BB9B3-3FA3-BE33-9484-CAC21695A33C}
+		{99827EF6-67F3-4C70-B49E-C6484D1965A1} = {C4E66F78-7D10-63BB-63EB-27EB8B08FBE5}
 	EndGlobalSection
 EndGlobal

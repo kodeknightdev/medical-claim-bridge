@@ -2,4 +2,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
   </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="ReferenceData\*.json" LogicalName="ClaimBridge.Contracts.ReferenceData.%(Filename)%(Extension)" />
+  </ItemGroup>
 </Project>

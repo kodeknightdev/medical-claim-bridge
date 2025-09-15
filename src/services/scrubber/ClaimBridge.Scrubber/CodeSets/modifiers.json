@@ -1,0 +1,14 @@
+[
+  { "code": "25", "description": "Separate visit on the same day as a procedure", "allowedCategories": ["EM", "Preventive"] },
+  { "code": "59", "description": "Distinct service", "allowedCategories": ["Procedure", "Lab", "Imaging", "Therapy", "Drug"] },
+  { "code": "XE", "description": "Separate encounter", "allowedCategories": ["Procedure", "Lab", "Imaging", "Therapy"] },
+  { "code": "XS", "description": "Separate organ or structure", "allowedCategories": ["Procedure", "Imaging", "Therapy"] },
+  { "code": "XP", "description": "Separate practitioner", "allowedCategories": ["Procedure", "Imaging", "Therapy"] },
+  { "code": "XU", "description": "Unusual non-overlapping service", "allowedCategories": ["Procedure", "Lab", "Imaging", "Therapy"] },
+  { "code": "50", "description": "Both sides", "allowedCategories": ["Procedure", "Imaging"] },
+  { "code": "LT", "description": "Left side", "allowedCategories": ["Procedure", "Imaging", "Therapy"] },
+  { "code": "RT", "description": "Right side", "allowedCategories": ["Procedure", "Imaging", "Therapy"] },
+  { "code": "26", "description": "Professional part only", "allowedCategories": ["Imaging", "Procedure"] },
+  { "code": "TC", "description": "Technical part only", "allowedCategories": ["Imaging", "Procedure"] },
+  { "code": "95", "description": "Real-time telehealth", "allowedCategories": ["EM", "Therapy"] }
+]
