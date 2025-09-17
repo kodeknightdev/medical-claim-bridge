@@ -1,6 +1,7 @@
 using System.Diagnostics.Metrics;
 using ClaimBridge.Scrubber.CodeSetsCache;
 using ClaimBridge.Scrubber.Data;
+using ClaimBridge.Scrubber.Rules.PayerRules;
 
 namespace ClaimBridge.Scrubber.Rules;
 
@@ -9,6 +10,7 @@ public sealed record ScrubOutcome(Guid? RunId, ScrubResult Result);
 public class ScrubService(
     ScrubEngine engine,
     CodeSetProvider codeSets,
+    PayerRuleProvider payerRules,
     ScrubberDb db,
     ScrubberMetrics metrics,
     TimeProvider clock)
@@ -17,7 +19,7 @@ public class ScrubService(
     {
         var snapshot = await codeSets.GetAsync(ct);
         var context = new ScrubContext(claim, snapshot, DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime));
-        var result = engine.Run(context);
+        var result = engine.Run(context, await payerRules.GetRulesAsync(claim.PayerId, ct));
 
         if (!persist)
             return new ScrubOutcome(null, result);

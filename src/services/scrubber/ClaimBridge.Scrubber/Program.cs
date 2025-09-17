@@ -1,6 +1,7 @@
 using ClaimBridge.Scrubber.CodeSetsCache;
 using ClaimBridge.Scrubber.Data;
 using ClaimBridge.Scrubber.Rules;
+using ClaimBridge.Scrubber.Rules.PayerRules;
 using ClaimBridge.ServiceDefaults;
 using ClaimBridge.ServiceDefaults.Auth;
 using ClaimBridge.ServiceDefaults.Caching;
@@ -17,6 +18,7 @@ builder.Services.AddClaimBridgeCaching(builder.Configuration);
 builder.Services.AddScoped<CodeSetProvider>();
 builder.Services.AddBuiltInScrubRules();
 builder.Services.AddScoped<ScrubService>();
+builder.Services.AddScoped<PayerRuleProvider>();
 builder.Services.AddSingleton<ScrubberMetrics>();
 builder.Services.AddHealthChecks().AddSqlServerReadiness(builder.Configuration, "ScrubberDb");
 builder.Services.AddControllers();
@@ -29,7 +31,11 @@ app.UseAuthorization();
 app.MapControllers();
 
 if (app.Configuration.GetValue<bool>("Seed:Enabled"))
-    await app.MigrateAsync<ScrubberDb>((_, db) => CodeSetSeeder.SeedAsync(db));
+    await app.MigrateAsync<ScrubberDb>(async (_, db) =>
+    {
+        await CodeSetSeeder.SeedAsync(db);
+        await PayerRuleSeeder.SeedAsync(db);
+    });
 
 app.Run();
 

@@ -11,6 +11,7 @@ public class ScrubberDb(DbContextOptions<ScrubberDb> options) : DbContext(option
     public DbSet<MedicalNecessityEntry> MedicalNecessity => Set<MedicalNecessityEntry>();
     public DbSet<PayerSetting> PayerSettings => Set<PayerSetting>();
     public DbSet<ScrubRun> ScrubRuns => Set<ScrubRun>();
+    public DbSet<PayerRule> PayerRules => Set<PayerRule>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -59,6 +60,19 @@ public class ScrubberDb(DbContextOptions<ScrubberDb> options) : DbContext(option
             e.Property(x => x.Field).HasMaxLength(60);
             e.Property(x => x.FixSuggestion).HasMaxLength(400);
             e.HasIndex(x => x.RuleCode);
+        });
+        b.Entity<PayerRule>(e =>
+        {
+            e.Property(x => x.PayerId).HasMaxLength(20);
+            e.Property(x => x.RuleCode).HasMaxLength(20);
+            e.Property(x => x.Name).HasMaxLength(120);
+            e.Property(x => x.Scope).HasMaxLength(10);
+            e.Property(x => x.ConditionJson).HasMaxLength(2000);
+            e.Property(x => x.Severity).HasMaxLength(10);
+            e.Property(x => x.Message).HasMaxLength(400);
+            e.Property(x => x.FixSuggestion).HasMaxLength(400);
+            e.Property(x => x.UpdatedBy).HasMaxLength(150);
+            e.HasIndex(x => new { x.PayerId, x.RuleCode }).IsUnique();
         });
         b.Entity<PayerSetting>(e =>
         {
