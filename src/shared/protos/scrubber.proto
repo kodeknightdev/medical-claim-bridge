@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package claimbridge.scrubber.v1;
+
+option csharp_namespace = "ClaimBridge.Scrubber.Grpc";
+
+// Inline and final claim scrubbing. Called by the claims service only.
+service ClaimScrubber {
+  // persist=false is used for the debounced preview while a claim is typed
+  rpc Scrub (ScrubRequest) returns (ScrubResponse);
+}
+
+message ScrubRequest {
+  string claim_id = 1;
+  int32 claim_version = 2;
+  bool persist = 3;
+  ScrubClaim claim = 4;
+}
+
+message ScrubClaim {
+  string org_id = 1;
+  string payer_id = 2;
+  string billing_npi = 3;
+  string rendering_npi = 4;
+  string member_id = 5;
+  string patient_dob = 6;          // yyyy-MM-dd
+  string patient_gender = 7;
+  string frequency_code = 8;
+  string original_claim_number = 9;
+  string prior_auth_number = 10;
+  repeated string diagnoses = 11;
+  repeated ServiceLine lines = 12;
+  string submission_date = 13;     // yyyy-MM-dd
+  Eligibility eligibility = 14;
+  string possible_duplicate_of = 15;
+}
+
+message ServiceLine {
+  int32 line_number = 1;
+  string procedure_code = 2;
+  repeated string modifiers = 3;
+  string units = 4;                // decimal as string
+  string charge = 5;               // decimal as string
+  string service_date = 6;         // yyyy-MM-dd
+  string place_of_service = 7;
+  repeated int32 dx_pointers = 8;
+}
+
+message Eligibility {
+  string status = 1;               // Unknown | Active | Inactive
+  string coverage_start = 2;
+  string coverage_end = 3;
+}
+
+message ScrubResponse {
+  bool passed = 1;
+  repeated Edit edits = 2;
+  int32 rules_evaluated = 3;
+  string run_id = 4;
+}
+
+message Edit {
+  string rule_code = 1;
+  string severity = 2;             // Error | Warning
+  string message = 3;
+  string field = 4;
+  string fix_suggestion = 5;
+  int32 line_number = 6;           // 0 when the edit is claim level
+}
