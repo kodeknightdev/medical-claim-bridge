@@ -13,6 +13,7 @@ public class ClaimsDb(DbContextOptions<ClaimsDb> options) : DbContext(options), 
     public DbSet<ClaimStatusEvent> StatusEvents => Set<ClaimStatusEvent>();
     public DbSet<ClaimLifecycleState> Lifecycles => Set<ClaimLifecycleState>();
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
+    public DbSet<ClaimSearchEntry> SearchEntries => Set<ClaimSearchEntry>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<ProcessedEvent> ProcessedEvents => Set<ProcessedEvent>();
 
@@ -93,6 +94,28 @@ public class ClaimsDb(DbContextOptions<ClaimsDb> options) : DbContext(options), 
             e.HasKey(x => x.ClaimId);
             e.Property(x => x.DeadlineKind).HasConversion<string>().HasMaxLength(20);
             e.HasIndex(x => x.DeadlineAt);
+        });
+
+        b.Entity<ClaimSearchEntry>(e =>
+        {
+            e.ToTable("ClaimSearch");
+            e.HasKey(x => x.ClaimId);
+            e.Property(x => x.ClaimNumber).HasMaxLength(20);
+            e.Property(x => x.PayerId).HasMaxLength(20);
+            e.Property(x => x.Status).HasMaxLength(20);
+            e.Property(x => x.FrequencyCode).HasMaxLength(1);
+            e.Property(x => x.MemberIdLast4).HasMaxLength(4);
+            e.Property(x => x.MemberIdHash).HasMaxLength(64);
+            e.Property(x => x.ProcedureCodes).HasMaxLength(300);
+            e.Property(x => x.TotalCharge).HasPrecision(12, 2);
+            e.Property(x => x.PaidAmount).HasPrecision(12, 2);
+            e.Property(x => x.Balance).HasPrecision(12, 2);
+            e.Property(x => x.DenialRisk).HasPrecision(5, 4);
+            e.Property(x => x.DenialCategory).HasMaxLength(30);
+            e.Property(x => x.Source).HasMaxLength(10);
+            e.HasIndex(x => new { x.OrgId, x.Status, x.CreatedAt });
+            e.HasIndex(x => x.ClaimNumber);
+            e.HasIndex(x => x.MemberIdHash);
         });
 
         b.Entity<AuditLogEntry>(e =>

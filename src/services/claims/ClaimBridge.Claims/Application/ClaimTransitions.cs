@@ -5,7 +5,7 @@ using ClaimBridge.ServiceDefaults.Messaging;
 namespace ClaimBridge.Claims.Application;
 
 /// <summary>Fires lifecycle triggers and stages the matching claims.status-changed event in the same transaction.</summary>
-public class ClaimTransitions(IEventOutbox outbox, TimeProvider clock)
+public class ClaimTransitions(IEventOutbox outbox, ClaimReadModelProjector projector, TimeProvider clock)
 {
     public ClaimStatusEvent Fire(Claim claim, LifecycleTrigger trigger, string source, string? reason = null, string? detail = null)
     {
@@ -22,6 +22,9 @@ public class ClaimTransitions(IEventOutbox outbox, TimeProvider clock)
     }
 
     public void PublishCreated(Claim claim, ClaimStatusEvent entry) => Publish(claim, entry);
+
+    /// <summary>Refreshes the search read model; call once per unit of work after the aggregate changes.</summary>
+    public Task ProjectAsync(Claim claim, CancellationToken ct) => projector.ProjectAsync(claim, ct);
 
     private void Publish(Claim claim, ClaimStatusEvent entry) =>
         outbox.Enqueue(Topics.ClaimStatusChanged, claim.Id.ToString(), new ClaimStatusChanged(

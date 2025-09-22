@@ -20,6 +20,7 @@ public class ClaimIntakeService(
     ClaimPhi phi,
     ProvidersClient providers,
     ClaimTransitions transitions,
+    DuplicateDetector duplicates,
     IEventOutbox outbox,
     TimeProvider clock)
 {
@@ -31,6 +32,23 @@ public class ClaimIntakeService(
         if (!await providers.IsEnrolledAsync(orgId, request.PayerId, ct))
             return IntakeOutcome.Fail(422, "Not enrolled with payer",
                 $"The organisation is not actively enrolled with {request.PayerId}. Request enrollment before submitting claims.");
+
+        Claim? original = null;
+        var replaces = request.FrequencyCode is "7" or "8";
+        if (replaces)
+        {
+            original = await db.Claims.Include(c => c.History)
+                .FirstOrDefaultAsync(c => c.OrgId == orgId && c.ClaimNumber == request.OriginalClaimNumber, ct);
+            if (original is null)
+                return IntakeOutcome.Fail(422, "Original claim not found",
+                    $"No claim {request.OriginalClaimNumber} exists for this organisation.");
+            var trigger = request.FrequencyCode == "7" ? LifecycleTrigger.Supersede : LifecycleTrigger.Void;
+            if (!ClaimLifecycle.CanFire(original.Status, trigger))
+                return IntakeOutcome.Fail(409, "Original claim cannot be corrected yet",
+                    $"Claim {original.ClaimNumber} is {original.Status}; wait for the payer's decision before replacing or voiding it.");
+            if (original.PayerId != request.PayerId)
+                return IntakeOutcome.Fail(422, "Payer mismatch", "A corrected claim must go to the same payer as the original.");
+        }
 
         var now = clock.GetUtcNow();
         var claim = new Claim
@@ -46,6 +64,19 @@ public class ClaimIntakeService(
             StatusChangedAt = now
         };
         Apply(claim, request);
+        if (claim.FrequencyCode == "1")
+            claim.PossibleDuplicateOf = await duplicates.FindAsync(claim, ct);
+
+        if (original is not null)
+        {
+            claim.PreviousClaimId = original.Id;
+            claim.Version = original.Version + 1;
+            original.SupersededByClaimId = claim.Id;
+            transitions.Fire(original, claim.FrequencyCode == "7" ? LifecycleTrigger.Supersede : LifecycleTrigger.Void,
+                source.ToString().ToLowerInvariant(),
+                claim.FrequencyCode == "7" ? $"Replaced by corrected claim {claim.ClaimNumber}" : $"Voided by {claim.ClaimNumber}");
+            await transitions.ProjectAsync(original, ct);
+        }
 
         db.Claims.Add(claim);
         db.Lifecycles.Add(new ClaimLifecycleState { ClaimId = claim.Id, UpdatedAt = now });
@@ -53,6 +84,7 @@ public class ClaimIntakeService(
         transitions.PublishCreated(claim, created);
         outbox.Enqueue(Topics.ClaimReceived, claim.Id.ToString(),
             new ClaimReceived(claim.Id, claim.ClaimNumber, orgId, claim.PayerId, claim.Version, source.ToString()));
+        await transitions.ProjectAsync(claim, ct);
 
         await db.SaveChangesAsync(ct);
         return new IntakeOutcome(claim, null);
@@ -68,7 +100,9 @@ public class ClaimIntakeService(
             return IntakeOutcome.Fail(422, "Not enrolled with payer", $"The organisation is not actively enrolled with {request.PayerId}.");
 
         Apply(claim, request with { FrequencyCode = claim.FrequencyCode, OriginalClaimNumber = claim.OriginalClaimNumber });
+        claim.PossibleDuplicateOf = claim.FrequencyCode == "1" ? await duplicates.FindAsync(claim, ct) : null;
         transitions.Fire(claim, LifecycleTrigger.Edited, "portal", $"Edited by {actor}");
+        await transitions.ProjectAsync(claim, ct);
         outbox.Enqueue(Topics.ClaimReceived, claim.Id.ToString(),
             new ClaimReceived(claim.Id, claim.ClaimNumber, claim.OrgId, claim.PayerId, claim.Version, "Edit"));
         await db.SaveChangesAsync(ct);

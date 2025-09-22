@@ -37,6 +37,8 @@ builder.Services.AddScoped<ScrubberClient>();
 builder.Services.AddScoped<ClaimPhi>();
 builder.Services.AddScoped<ClaimTransitions>();
 builder.Services.AddScoped<ClaimIntakeService>();
+builder.Services.AddScoped<DuplicateDetector>();
+builder.Services.AddScoped<ClaimReadModelProjector>();
 builder.Services.AddValidatorsFromAssemblyContaining<ClaimRequestValidator>();
 
 builder.Services.AddHealthChecks().AddSqlServerReadiness(config, "ClaimsDb");
