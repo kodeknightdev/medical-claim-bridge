@@ -14,6 +14,7 @@ public class ClaimsDb(DbContextOptions<ClaimsDb> options) : DbContext(options), 
     public DbSet<ClaimLifecycleState> Lifecycles => Set<ClaimLifecycleState>();
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
     public DbSet<ClaimSearchEntry> SearchEntries => Set<ClaimSearchEntry>();
+    public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<ProcessedEvent> ProcessedEvents => Set<ProcessedEvent>();
 
@@ -116,6 +117,16 @@ public class ClaimsDb(DbContextOptions<ClaimsDb> options) : DbContext(options), 
             e.HasIndex(x => new { x.OrgId, x.Status, x.CreatedAt });
             e.HasIndex(x => x.ClaimNumber);
             e.HasIndex(x => x.MemberIdHash);
+        });
+
+        b.Entity<IdempotencyRecord>(e =>
+        {
+            e.ToTable("IdempotencyKeys");
+            e.Property(x => x.ClientId).HasMaxLength(100);
+            e.Property(x => x.Key).HasMaxLength(100);
+            e.Property(x => x.RequestHash).HasMaxLength(64);
+            e.HasIndex(x => new { x.ClientId, x.Key }).IsUnique();
+            e.HasIndex(x => x.CreatedAt);
         });
 
         b.Entity<AuditLogEntry>(e =>
