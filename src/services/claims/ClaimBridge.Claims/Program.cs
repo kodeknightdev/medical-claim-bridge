@@ -1,6 +1,8 @@
 using ClaimBridge.Claims.Application;
 using ClaimBridge.Claims.Application.Clients;
 using ClaimBridge.Claims.Data;
+using ClaimBridge.Claims.Lifecycle;
+using ClaimBridge.Contracts.Events;
 using ClaimBridge.Scrubber.Grpc;
 using ClaimBridge.ServiceDefaults;
 using ClaimBridge.ServiceDefaults.Auth;
@@ -11,6 +13,7 @@ using ClaimBridge.ServiceDefaults.Phi;
 using ClaimBridge.ServiceDefaults.Validation;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults("claims");
@@ -20,13 +23,29 @@ var config = builder.Configuration;
 builder.Services.AddDbContext<ClaimsDb>(o => o.UseSqlServer(config.GetConnectionString("ClaimsDb")));
 builder.Services.AddPhiProtection(config);
 builder.Services.AddClaimBridgeCaching(config);
-builder.Services.AddClaimBridgeMessaging<ClaimsDb>(config, "claims");
+builder.Services.AddClaimBridgeMessaging<ClaimsDb>(config, "claims")
+    .Consume<ScrubStepHandler>("claims-scrub-step", Topics.ClaimReceived)
+    .Consume<ClaimProcessManager>("claims-process-manager",
+        Topics.ClaimScrubbed, Topics.ClaimSubmitted, Topics.AckReceived, Topics.PayerStatusUpdated,
+        Topics.PaymentPosted, Topics.ClaimDenied, Topics.ReversalPosted)
+    .Consume<ProvidersEventsHandler>("claims-providers", Topics.EnrollmentChanged);
+
+builder.Services.Configure<LifecycleOptions>(config.GetSection("Lifecycle"));
+builder.Services.AddQuartz(q =>
+{
+    var job = new JobKey("lifecycle-timeouts");
+    q.AddJob<LifecycleTimeoutJob>(job);
+    q.AddTrigger(t => t.ForJob(job).StartNow()
+        .WithSimpleSchedule(s => s.WithIntervalInSeconds(config.GetValue("Lifecycle:TimeoutScanSeconds", 20)).RepeatForever()));
+});
+builder.Services.AddQuartzHostedService(o => o.WaitForJobsToComplete = true);
 
 builder.Services.AddGrpcClient<ClaimScrubber.ClaimScrubberClient>(o => o.Address = new Uri(config["Services:ScrubberGrpc"]!));
 builder.Services.AddHttpClient<ProvidersClient>(c => c.BaseAddress = new Uri(config["Services:Providers"]!))
     .AddStandardResilienceHandler();
 builder.Services.AddHttpClient<EligibilityClient>(c => c.BaseAddress = new Uri(config["Services:PayersGateway"]!))
     .AddStandardResilienceHandler(o => o.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(8));
+builder.Services.AddHttpClient<StatusInquiryClient>(c => c.BaseAddress = new Uri(config["Services:PayersGateway"]!));
 builder.Services.AddHttpClient<RiskClient>(c =>
 {
     c.BaseAddress = new Uri(config["Services:DenialPredictor"]!);

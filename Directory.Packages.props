@@ -35,6 +35,9 @@
     <PackageVersion Include="AspNetCore.HealthChecks.Redis" Version="9.0.0" />
     <PackageVersion Include="AspNetCore.HealthChecks.Kafka" Version="9.0.0" />
   </ItemGroup>
+  <ItemGroup Label="Scheduling">
+    <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.14.0" />
+  </ItemGroup>
   <ItemGroup Label="Validation">
     <PackageVersion Include="FluentValidation" Version="12.0.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
