@@ -4,6 +4,7 @@ using ClaimBridge.Providers.Seeding;
 using ClaimBridge.ServiceDefaults;
 using ClaimBridge.ServiceDefaults.Auth;
 using ClaimBridge.ServiceDefaults.Data;
+using ClaimBridge.ServiceDefaults.Messaging;
 using ClaimBridge.ServiceDefaults.Phi;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,6 +15,7 @@ builder.AddClaimBridgeAuth();
 builder.Services.AddDbContext<ProvidersDb>(o =>
     o.UseSqlServer(builder.Configuration.GetConnectionString("ProvidersDb")));
 builder.Services.AddPhiProtection(builder.Configuration);
+builder.Services.AddClaimBridgeMessaging<ProvidersDb>(builder.Configuration, "providers");
 builder.Services.AddScoped<EnrollmentService>();
 builder.Services.AddHealthChecks().AddSqlServerReadiness(builder.Configuration, "ProvidersDb");
 builder.Services.AddControllers();

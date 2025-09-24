@@ -1,10 +1,13 @@
+using ClaimBridge.ServiceDefaults.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
 namespace ClaimBridge.Providers.Data;
 
-public class ProvidersDb(DbContextOptions<ProvidersDb> options) : DbContext(options)
+public class ProvidersDb(DbContextOptions<ProvidersDb> options) : DbContext(options), IMessagingDbContext
 {
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+    public DbSet<ProcessedEvent> ProcessedEvents => Set<ProcessedEvent>();
     public DbSet<ProviderOrganization> Organizations => Set<ProviderOrganization>();
     public DbSet<RenderingProvider> RenderingProviders => Set<RenderingProvider>();
     public DbSet<Payer> Payers => Set<Payer>();
@@ -15,6 +18,7 @@ public class ProvidersDb(DbContextOptions<ProvidersDb> options) : DbContext(opti
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.HasDefaultSchema("providers");
+        b.AddMessagingTables();
 
         b.Entity<ProviderOrganization>(e =>
         {

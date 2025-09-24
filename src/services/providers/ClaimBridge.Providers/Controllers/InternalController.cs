@@ -1,4 +1,6 @@
+using ClaimBridge.Contracts.Events;
 using ClaimBridge.Providers.Data;
+using ClaimBridge.ServiceDefaults.Messaging;
 using ClaimBridge.ServiceDefaults.Phi;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +13,7 @@ namespace ClaimBridge.Providers.Controllers;
 [ApiController]
 [Route("internal")]
 [ApiExplorerSettings(GroupName = "internal")]
-public class InternalController(ProvidersDb db, IPhiProtector protector, TimeProvider clock) : ControllerBase
+public class InternalController(ProvidersDb db, IPhiProtector protector, IEventOutbox outbox, TimeProvider clock) : ControllerBase
 {
     public sealed record EnrollmentCheck(Guid OrgId, string PayerId, bool Active, string? Status);
 
@@ -47,6 +49,7 @@ public class InternalController(ProvidersDb db, IPhiProtector protector, TimePro
         {
             At = clock.GetUtcNow(), Actor = "notifications", Action = "webhook.auto-disabled", Target = id.ToString(), Detail = request.Reason
         });
+        outbox.Enqueue(Topics.WebhookSubscriptionChanged, hook.OrgId.ToString(), new WebhookSubscriptionChanged(hook.Id, hook.OrgId, "disabled"));
         await db.SaveChangesAsync();
         return NoContent();
     }

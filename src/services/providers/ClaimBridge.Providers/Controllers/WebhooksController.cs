@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
+using ClaimBridge.Contracts.Events;
 using ClaimBridge.Providers.Data;
+using ClaimBridge.ServiceDefaults.Messaging;
 using ClaimBridge.ServiceDefaults.Auth;
 using ClaimBridge.ServiceDefaults.Phi;
 using Microsoft.AspNetCore.Authorization;
@@ -12,7 +14,7 @@ namespace ClaimBridge.Providers.Controllers;
 [ApiController]
 [Route("api/webhooks")]
 [Authorize]
-public class WebhooksController(ProvidersDb db, IPhiProtector protector, TimeProvider clock) : ControllerBase
+public class WebhooksController(ProvidersDb db, IPhiProtector protector, IEventOutbox outbox, TimeProvider clock) : ControllerBase
 {
     public static readonly string[] SupportedEvents =
         ["claim.accepted", "claim.rejected", "claim.paid", "claim.denied", "remittance.posted"];
@@ -53,6 +55,7 @@ public class WebhooksController(ProvidersDb db, IPhiProtector protector, TimePro
         };
         db.Webhooks.Add(hook);
         Audit("webhook.created", hook.Id.ToString());
+        Changed(hook, "created");
         await db.SaveChangesAsync();
         return Created($"/api/webhooks/{hook.Id}", new SecretResponse(hook.Id, secret, "Store this signing secret now, it is not shown again."));
     }
@@ -66,6 +69,7 @@ public class WebhooksController(ProvidersDb db, IPhiProtector protector, TimePro
         var secret = NewSecret();
         hook.SigningSecretProtected = protector.Protect(secret);
         Audit("webhook.secret-rotated", hook.Id.ToString());
+        Changed(hook, "secret-rotated");
         await db.SaveChangesAsync();
         return new SecretResponse(hook.Id, secret, "Deliveries are signed with the new secret from now on.");
     }
@@ -80,6 +84,7 @@ public class WebhooksController(ProvidersDb db, IPhiProtector protector, TimePro
         hook.DisabledAt = null;
         hook.DisabledReason = null;
         Audit("webhook.enabled", hook.Id.ToString());
+        Changed(hook, "enabled");
         await db.SaveChangesAsync();
         return NoContent();
     }
@@ -92,6 +97,7 @@ public class WebhooksController(ProvidersDb db, IPhiProtector protector, TimePro
         if (hook is null) return NotFound();
         db.Webhooks.Remove(hook);
         Audit("webhook.deleted", hook.Id.ToString());
+        Changed(hook, "deleted");
         await db.SaveChangesAsync();
         return NoContent();
     }
@@ -101,6 +107,9 @@ public class WebhooksController(ProvidersDb db, IPhiProtector protector, TimePro
         var hook = await db.Webhooks.FindAsync(id);
         return hook is not null && User.CanAccessOrg(hook.OrgId) ? hook : null;
     }
+
+    private void Changed(WebhookSubscription hook, string change) =>
+        outbox.Enqueue(Topics.WebhookSubscriptionChanged, hook.OrgId.ToString(), new WebhookSubscriptionChanged(hook.Id, hook.OrgId, change));
 
     private void Audit(string action, string target) =>
         db.AuditLog.Add(new AuditLogEntry { At = clock.GetUtcNow(), Actor = User.Actor(), Action = action, Target = target });
