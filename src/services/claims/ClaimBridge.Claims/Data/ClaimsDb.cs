@@ -15,6 +15,7 @@ public class ClaimsDb(DbContextOptions<ClaimsDb> options) : DbContext(options), 
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
     public DbSet<ClaimSearchEntry> SearchEntries => Set<ClaimSearchEntry>();
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
+    public DbSet<Batch> Batches => Set<Batch>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<ProcessedEvent> ProcessedEvents => Set<ProcessedEvent>();
 
@@ -127,6 +128,17 @@ public class ClaimsDb(DbContextOptions<ClaimsDb> options) : DbContext(options), 
             e.Property(x => x.RequestHash).HasMaxLength(64);
             e.HasIndex(x => new { x.ClientId, x.Key }).IsUnique();
             e.HasIndex(x => x.CreatedAt);
+        });
+
+        b.Entity<Batch>(e =>
+        {
+            e.Property(x => x.FileName).HasMaxLength(200);
+            e.Property(x => x.Format).HasMaxLength(10);
+            e.Property(x => x.BlobContainer).HasMaxLength(60);
+            e.Property(x => x.BlobName).HasMaxLength(300);
+            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(12);
+            e.Property(x => x.UploadedBy).HasMaxLength(150);
+            e.HasIndex(x => new { x.OrgId, x.UploadedAt });
         });
 
         b.Entity<AuditLogEntry>(e =>

@@ -19,6 +19,8 @@
     <PackageReference Include="AspNetCore.HealthChecks.Redis" />
     <PackageReference Include="AspNetCore.HealthChecks.Kafka" />
     <PackageReference Include="Confluent.Kafka" />
+    <PackageReference Include="Azure.Storage.Blobs" />
+    <PackageReference Include="AspNetCore.HealthChecks.Azure.Storage.Blobs" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />

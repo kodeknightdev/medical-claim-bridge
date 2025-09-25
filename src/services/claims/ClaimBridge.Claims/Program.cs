@@ -1,5 +1,6 @@
 using ClaimBridge.Claims.Application;
 using ClaimBridge.Claims.Application.Clients;
+using ClaimBridge.Claims.Batches;
 using ClaimBridge.Claims.Data;
 using ClaimBridge.Claims.Lifecycle;
 using ClaimBridge.Contracts.Events;
@@ -10,6 +11,7 @@ using ClaimBridge.ServiceDefaults.Caching;
 using ClaimBridge.ServiceDefaults.Data;
 using ClaimBridge.ServiceDefaults.Messaging;
 using ClaimBridge.ServiceDefaults.Phi;
+using ClaimBridge.ServiceDefaults.Storage;
 using ClaimBridge.ServiceDefaults.Validation;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -23,12 +25,14 @@ var config = builder.Configuration;
 builder.Services.AddDbContext<ClaimsDb>(o => o.UseSqlServer(config.GetConnectionString("ClaimsDb")));
 builder.Services.AddPhiProtection(config);
 builder.Services.AddClaimBridgeCaching(config);
+builder.Services.AddClaimBridgeBlobStorage(config);
 builder.Services.AddClaimBridgeMessaging<ClaimsDb>(config, "claims")
     .Consume<ScrubStepHandler>("claims-scrub-step", Topics.ClaimReceived)
     .Consume<ClaimProcessManager>("claims-process-manager",
         Topics.ClaimScrubbed, Topics.ClaimSubmitted, Topics.AckReceived, Topics.PayerStatusUpdated,
         Topics.PaymentPosted, Topics.ClaimDenied, Topics.ReversalPosted)
-    .Consume<ProvidersEventsHandler>("claims-providers", Topics.EnrollmentChanged);
+    .Consume<ProvidersEventsHandler>("claims-providers", Topics.EnrollmentChanged)
+    .Consume<BatchFanOutHandler>("claims-batches", Topics.BatchUploaded);
 
 builder.Services.Configure<LifecycleOptions>(config.GetSection("Lifecycle"));
 builder.Services.AddQuartz(q =>
