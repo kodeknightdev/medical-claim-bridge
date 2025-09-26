@@ -18,6 +18,15 @@ public class ProvidersClient(HttpClient http, HybridCache cache)
             new HybridCacheEntryOptions { Expiration = TimeSpan.FromMinutes(5), LocalCacheExpiration = TimeSpan.FromMinutes(1) },
             cancellationToken: ct);
 
+    public sealed record OrgInfo(Guid Id, string Name, string GroupNpi, string TaxId, string AddressLine1, string City,
+        string State, string Zip, string ContactEmail);
+
+    public async Task<OrgInfo> GetOrgAsync(Guid orgId, CancellationToken ct) =>
+        await cache.GetOrCreateAsync($"claims:org:{orgId}", async token =>
+                await http.GetFromJsonAsync<OrgInfo>($"internal/orgs/{orgId}", token)
+                ?? throw new InvalidOperationException($"Organisation {orgId} not found"),
+            new HybridCacheEntryOptions { Expiration = TimeSpan.FromMinutes(30) }, cancellationToken: ct);
+
     public ValueTask InvalidateAsync(Guid orgId, string payerId, CancellationToken ct = default) =>
         cache.RemoveAsync(EnrollmentKey(orgId, payerId), ct);
 }
