@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ClaimBridge.Contracts\ClaimBridge.Contracts.csproj" />
+  </ItemGroup>
+</Project>

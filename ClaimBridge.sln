@@ -33,6 +33,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "payers-gateway", "payers-ga
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClaimBridge.PayersGateway", "src\services\payers-gateway\ClaimBridge.PayersGateway\ClaimBridge.PayersGateway.csproj", "{798FF896-2E3B-47CB-B6A2-9EB182C24004}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClaimBridge.X12", "src\shared\ClaimBridge.X12\ClaimBridge.X12.csproj", "{BE010C7C-B550-4EE2-A31C-15309A4AC4E8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -127,6 +129,18 @@ Global
 		{798FF896-2E3B-47CB-B6A2-9EB182C24004}.Release|x64.Build.0 = Release|Any CPU
 		{798FF896-2E3B-47CB-B6A2-9EB182C24004}.Release|x86.ActiveCfg = Release|Any CPU
 		{798FF896-2E3B-47CB-B6A2-9EB182C24004}.Release|x86.Build.0 = Release|Any CPU
+		{BE010C7C-B550-4EE2-A31C-15309A4AC4E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE010C7C-B550-4EE2-A31C-15309A4AC4E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE010C7C-B550-4EE2-A31C-15309A4AC4E8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BE010C7C-B550-4EE2-A31C-15309A4AC4E8}.Debug|x64.Build.0 = Debug|Any CPU
+		{BE010C7C-B550-4EE2-A31C-15309A4AC4E8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BE010C7C-B550-4EE2-A31C-15309A4AC4E8}.Debug|x86.Build.0 = Debug|Any CPU
+		{BE010C7C-B550-4EE2-A31C-15309A4AC4E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE010C7C-B550-4EE2-A31C-15309A4AC4E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE010C7C-B550-4EE2-A31C-15309A4AC4E8}.Release|x64.ActiveCfg = Release|Any CPU
+		{BE010C7C-B550-4EE2-A31C-15309A4AC4E8}.Release|x64.Build.0 = Release|Any CPU
+		{BE010C7C-B550-4EE2-A31C-15309A4AC4E8}.Release|x86.ActiveCfg = Release|Any CPU
+		{BE010C7C-B550-4EE2-A31C-15309A4AC4E8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -146,5 +160,6 @@ Global
 		{A9360887-1C28-4F17-86A1-61B3EA5B89F8} = {675A25B2-00EF-E75E-18BD-DF5096AECD99}
 		{154ECB27-06A9-F41A-917B-BFA869F1E2C1} = {984BB9B3-3FA3-BE33-9484-CAC21695A33C}
 		{798FF896-2E3B-47CB-B6A2-9EB182C24004} = {154ECB27-06A9-F41A-917B-BFA869F1E2C1}
+		{BE010C7C-B550-4EE2-A31C-15309A4AC4E8} = {C8E42992-5E42-0C2B-DBFE-AA848D06431C}
 	EndGlobalSection
 EndGlobal
