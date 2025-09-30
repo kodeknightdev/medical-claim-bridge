@@ -929,6 +929,12 @@
           "Serilog.AspNetCore": "[9.0.0, )"
         }
       },
+      "claimbridge.x12": {
+        "type": "Project",
+        "dependencies": {
+          "ClaimBridge.Contracts": "[1.0.0, )"
+        }
+      },
       "AspNetCore.HealthChecks.Azure.Storage.Blobs": {
         "type": "CentralTransitive",
         "requested": "[9.0.0, )",

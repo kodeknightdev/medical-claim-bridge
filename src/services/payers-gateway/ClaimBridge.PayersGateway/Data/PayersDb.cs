@@ -8,6 +8,7 @@ public class PayersDb(DbContextOptions<PayersDb> options) : DbContext(options), 
 {
     public DbSet<Submission> Submissions => Set<Submission>();
     public DbSet<PayerStatusEntry> StatusEntries => Set<PayerStatusEntry>();
+    public DbSet<PayerFile> Files => Set<PayerFile>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<ProcessedEvent> ProcessedEvents => Set<ProcessedEvent>();
 
@@ -15,6 +16,7 @@ public class PayersDb(DbContextOptions<PayersDb> options) : DbContext(options), 
     {
         b.HasDefaultSchema("payers");
         b.AddMessagingTables();
+        b.HasSequence<int>("InterchangeControlNumbers").StartsAt(1000);
 
         b.Entity<Submission>(e =>
         {
@@ -33,6 +35,21 @@ public class PayersDb(DbContextOptions<PayersDb> options) : DbContext(options), 
             e.HasIndex(x => x.ClaimNumber);
         });
 
+        b.Entity<PayerFile>(e =>
+        {
+            e.ToTable("Files");
+            e.Property(x => x.PayerId).HasMaxLength(20);
+            e.Property(x => x.Direction).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Kind).HasMaxLength(5);
+            e.Property(x => x.FileName).HasMaxLength(120);
+            e.Property(x => x.BlobContainer).HasMaxLength(60);
+            e.Property(x => x.BlobName).HasMaxLength(250);
+            e.Property(x => x.ControlNumber).HasMaxLength(9);
+            e.Property(x => x.Status).HasMaxLength(20);
+            e.Property(x => x.Error).HasMaxLength(500);
+            e.HasIndex(x => new { x.PayerId, x.Kind, x.ControlNumber });
+        });
+
         b.Entity<PayerStatusEntry>(e =>
         {
             e.ToTable("StatusHistory");
@@ -44,6 +61,12 @@ public class PayersDb(DbContextOptions<PayersDb> options) : DbContext(options), 
             e.HasIndex(x => new { x.ClaimId, x.At });
         });
     }
+}
+
+public static class PayersDbExtensions
+{
+    public static async Task<int> NextInterchangeControlNumberAsync(this PayersDb db, CancellationToken ct) =>
+        await db.Database.SqlQueryRaw<int>("SELECT NEXT VALUE FOR [payers].[InterchangeControlNumbers] AS [Value]").SingleAsync(ct);
 }
 
 public class DesignTimeFactory : IDesignTimeDbContextFactory<PayersDb>

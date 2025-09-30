@@ -11,5 +11,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\shared\ClaimBridge.ServiceDefaults\ClaimBridge.ServiceDefaults.csproj" />
     <ProjectReference Include="..\..\..\shared\ClaimBridge.Contracts\ClaimBridge.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\shared\ClaimBridge.X12\ClaimBridge.X12.csproj" />
   </ItemGroup>
 </Project>

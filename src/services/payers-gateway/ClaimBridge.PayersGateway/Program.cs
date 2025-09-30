@@ -2,9 +2,11 @@ using ClaimBridge.Contracts.Events;
 using ClaimBridge.Contracts.Reference;
 using ClaimBridge.PayersGateway.Adapters;
 using ClaimBridge.PayersGateway.Adapters.PayerA;
+using ClaimBridge.PayersGateway.Adapters.PayerB;
 using ClaimBridge.PayersGateway.Api;
 using ClaimBridge.PayersGateway.Consumers;
 using ClaimBridge.PayersGateway.Data;
+using ClaimBridge.PayersGateway.Files;
 using ClaimBridge.PayersGateway.Jobs;
 using ClaimBridge.ServiceDefaults;
 using ClaimBridge.ServiceDefaults.Auth;
@@ -35,7 +37,10 @@ builder.Services.AddHttpClient<ClaimsClient>(c => c.BaseAddress = new Uri(config
     .AddStandardResilienceHandler();
 builder.Services.AddHttpClient<PayerAAdapter>(c => c.BaseAddress = new Uri(config[$"Payers:{SeedIds.PayerA}:BaseUrl"]!))
     .AddStandardResilienceHandler();
+builder.Services.AddHttpClient<PayerBAdapter>(c => c.BaseAddress = new Uri(config[$"Payers:{SeedIds.PayerB}:BaseUrl"]!))
+    .AddStandardResilienceHandler();
 builder.Services.AddScoped<IPayerAdapter>(sp => sp.GetRequiredService<PayerAAdapter>());
+builder.Services.AddScoped<IPayerAdapter>(sp => sp.GetRequiredService<PayerBAdapter>());
 
 builder.Services.AddScoped<PayerAdapterRegistry>();
 builder.Services.AddScoped<SubmissionService>();
@@ -47,6 +52,16 @@ builder.Services.AddQuartz(q =>
     var deferred = new JobKey("deferred-submissions");
     q.AddJob<DeferredSubmissionJob>(deferred);
     q.AddTrigger(t => t.ForJob(deferred).StartNow().WithSimpleSchedule(s => s.WithIntervalInSeconds(10).RepeatForever()));
+
+    var batchWriter = new JobKey("payer-b-batch-writer");
+    q.AddJob<PayerBBatchWriterJob>(batchWriter);
+    q.AddTrigger(t => t.ForJob(batchWriter).StartNow()
+        .WithSimpleSchedule(s => s.WithIntervalInSeconds(config.GetValue("Files:BatchWriterSeconds", 15)).RepeatForever()));
+
+    var polling = new JobKey("payer-file-polling");
+    q.AddJob<PayerFilePollingJob>(polling);
+    q.AddTrigger(t => t.ForJob(polling).StartNow()
+        .WithSimpleSchedule(s => s.WithIntervalInSeconds(config.GetValue("Files:PollSeconds", 10)).RepeatForever()));
 });
 builder.Services.AddQuartzHostedService(o => o.WaitForJobsToComplete = true);
 
