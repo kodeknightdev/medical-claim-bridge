@@ -64,6 +64,7 @@ public class BatchFanOutHandler(
         return format switch
         {
             "csv" => CsvClaimParser.Parse(reader),
+            "x12" => X12BatchParser.Parse(await reader.ReadToEndAsync(ct)),
             _ => throw new NotSupportedException($"Batch format {format} is not supported")
         };
     }
