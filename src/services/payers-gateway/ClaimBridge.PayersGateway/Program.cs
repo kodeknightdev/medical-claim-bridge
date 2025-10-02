@@ -3,11 +3,13 @@ using ClaimBridge.Contracts.Reference;
 using ClaimBridge.PayersGateway.Adapters;
 using ClaimBridge.PayersGateway.Adapters.PayerA;
 using ClaimBridge.PayersGateway.Adapters.PayerB;
+using ClaimBridge.PayersGateway.Adapters.PayerC;
 using ClaimBridge.PayersGateway.Api;
 using ClaimBridge.PayersGateway.Consumers;
 using ClaimBridge.PayersGateway.Data;
 using ClaimBridge.PayersGateway.Files;
 using ClaimBridge.PayersGateway.Jobs;
+using ClaimBridge.PayersGateway.Resilience;
 using ClaimBridge.ServiceDefaults;
 using ClaimBridge.ServiceDefaults.Auth;
 using ClaimBridge.ServiceDefaults.Caching;
@@ -35,12 +37,16 @@ foreach (var payer in SeedIds.Payers)
 
 builder.Services.AddHttpClient<ClaimsClient>(c => c.BaseAddress = new Uri(config["Services:Claims"]!))
     .AddStandardResilienceHandler();
+builder.Services.AddSingleton<PayerHealthTracker>();
 builder.Services.AddHttpClient<PayerAAdapter>(c => c.BaseAddress = new Uri(config[$"Payers:{SeedIds.PayerA}:BaseUrl"]!))
-    .AddStandardResilienceHandler();
+    .AddPayerPipeline(SeedIds.PayerA);
 builder.Services.AddHttpClient<PayerBAdapter>(c => c.BaseAddress = new Uri(config[$"Payers:{SeedIds.PayerB}:BaseUrl"]!))
-    .AddStandardResilienceHandler();
+    .AddPayerPipeline(SeedIds.PayerB);
+builder.Services.AddHttpClient<PayerCAdapter>(c => c.BaseAddress = new Uri(config[$"Payers:{SeedIds.PayerC}:BaseUrl"]!))
+    .AddPayerPipeline(SeedIds.PayerC);
 builder.Services.AddScoped<IPayerAdapter>(sp => sp.GetRequiredService<PayerAAdapter>());
 builder.Services.AddScoped<IPayerAdapter>(sp => sp.GetRequiredService<PayerBAdapter>());
+builder.Services.AddScoped<IPayerAdapter>(sp => sp.GetRequiredService<PayerCAdapter>());
 
 builder.Services.AddScoped<PayerAdapterRegistry>();
 builder.Services.AddScoped<SubmissionService>();
@@ -57,6 +63,11 @@ builder.Services.AddQuartz(q =>
     q.AddJob<PayerBBatchWriterJob>(batchWriter);
     q.AddTrigger(t => t.ForJob(batchWriter).StartNow()
         .WithSimpleSchedule(s => s.WithIntervalInSeconds(config.GetValue("Files:BatchWriterSeconds", 15)).RepeatForever()));
+
+    var inquiries = new JobKey("claim-status-inquiries");
+    q.AddJob<ClaimStatusInquiryJob>(inquiries);
+    q.AddTrigger(t => t.ForJob(inquiries).StartNow()
+        .WithSimpleSchedule(s => s.WithIntervalInSeconds(config.GetValue("Inquiry:ScanSeconds", 60)).RepeatForever()));
 
     var polling = new JobKey("payer-file-polling");
     q.AddJob<PayerFilePollingJob>(polling);

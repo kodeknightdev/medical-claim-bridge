@@ -147,8 +147,9 @@ public class PayerFilePollingJob(
         {
             var s = await db.Submissions.Where(x => x.PayerId == payerId && x.ClaimNumber == c.ClaimNumber)
                 .OrderByDescending(x => x.Attempt).FirstOrDefaultAsync(ct);
-            if (s is not null)
-                submissions.History(s, "835", c.IsReversal ? "reversal" : c.IsDenied ? "denied" : "paid",
+            if (s is null) continue;
+            s.LastPayerStatus = "remitted";
+            submissions.History(s, "835", c.IsReversal ? "reversal" : c.IsDenied ? "denied" : "paid",
                     $"Paid {c.PaidAmount:0.00} of {c.ChargeAmount:0.00}, EFT {era.EftTraceNumber}");
         }
     }
