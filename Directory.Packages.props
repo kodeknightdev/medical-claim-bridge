@@ -40,6 +40,10 @@
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.25.0" />
     <PackageVersion Include="CsvHelper" Version="33.1.0" />
   </ItemGroup>
+  <ItemGroup Label="Documents">
+    <PackageVersion Include="QuestPDF" Version="2025.7.0" />
+    <PackageVersion Include="MailKit" Version="4.13.0" />
+  </ItemGroup>
   <ItemGroup Label="Scheduling">
     <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.14.0" />
   </ItemGroup>
