@@ -24,11 +24,16 @@ builder.Services.AddClaimBridgeMessaging<RemittanceDb>(config, "remittance")
 
 builder.Services.AddScoped<PostingService>();
 builder.Services.AddSingleton<RemittanceMetrics>();
+builder.Services.AddScoped<ArSnapshotService>();
 builder.Services.AddQuartz(q =>
 {
     var retry = new JobKey("reconciliation-retry");
     q.AddJob<ReconciliationRetryJob>(retry);
     q.AddTrigger(t => t.ForJob(retry).StartNow().WithSimpleSchedule(s => s.WithIntervalInMinutes(2).RepeatForever()));
+
+    var snapshot = new JobKey("ar-snapshot");
+    q.AddJob<ArSnapshotJob>(snapshot);
+    q.AddTrigger(t => t.ForJob(snapshot).WithCronSchedule(config["Jobs:ArSnapshotCron"] ?? "0 0 2 * * ?"));
 });
 builder.Services.AddQuartzHostedService(o => o.WaitForJobsToComplete = true);
 

@@ -12,6 +12,7 @@ public class RemittanceDb(DbContextOptions<RemittanceDb> options) : DbContext(op
     public DbSet<UnmatchedLine> Unmatched => Set<UnmatchedLine>();
     public DbSet<ClaimBalance> Balances => Set<ClaimBalance>();
     public DbSet<ReasonCode> ReasonCodes => Set<ReasonCode>();
+    public DbSet<ArSnapshot> ArSnapshots => Set<ArSnapshot>();
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<ProcessedEvent> ProcessedEvents => Set<ProcessedEvent>();
@@ -99,6 +100,16 @@ public class RemittanceDb(DbContextOptions<RemittanceDb> options) : DbContext(op
                          nameof(ClaimBalance.PatientResponsibility), nameof(ClaimBalance.PayerOutstanding) })
                 e.Property(p).HasPrecision(12, 2);
             e.HasIndex(x => new { x.OrgId, x.Status });
+        });
+
+        b.Entity<ArSnapshot>(e =>
+        {
+            e.ToTable("ArSnapshots");
+            e.Property(x => x.PayerId).HasMaxLength(20);
+            foreach (var p in new[] { nameof(ArSnapshot.Days0To30), nameof(ArSnapshot.Days31To60), nameof(ArSnapshot.Days61To90),
+                         nameof(ArSnapshot.Days90Plus), nameof(ArSnapshot.TotalOutstanding) })
+                e.Property(p).HasPrecision(14, 2);
+            e.HasIndex(x => new { x.SnapshotDate, x.OrgId, x.PayerId }).IsUnique();
         });
 
         b.Entity<ReasonCode>(e =>
