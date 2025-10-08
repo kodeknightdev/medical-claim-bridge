@@ -1,4 +1,5 @@
 using ClaimBridge.Remittance.Data;
+using ClaimBridge.Remittance.Pdf;
 using ClaimBridge.ServiceDefaults.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,7 +10,7 @@ namespace ClaimBridge.Remittance.Api;
 [ApiController]
 [Route("api/remittances")]
 [Authorize(Policy = Policies.ClaimsRead)]
-public class RemittancesController(RemittanceDb db) : ControllerBase
+public class RemittancesController(RemittanceDb db, TimeProvider clock) : ControllerBase
 {
     public sealed record FileSummary(Guid Id, string PayerId, string? EftTraceNumber, DateOnly? PaymentDate, decimal TotalPaid,
         int ClaimCount, int MatchedCount, int UnmatchedCount, string Status, DateTimeOffset ReceivedAt);
@@ -71,6 +72,30 @@ public class RemittancesController(RemittanceDb db) : ControllerBase
                 User.IsStaff() ? file.TotalPaid : postings.Sum(p => p.Paid), file.ClaimCount, file.MatchedCount, file.UnmatchedCount,
                 file.Status, file.ReceivedAt),
             postings.Select(p => ToDto(p, codes)).ToList(), remarks);
+    }
+
+    /// <summary>Remittance PDF. Provider users get a copy limited to their own claims.</summary>
+    [HttpGet("{id:guid}/pdf")]
+    public async Task<IActionResult> Pdf(Guid id, CancellationToken ct)
+    {
+        var file = await db.Files.AsNoTracking().FirstOrDefaultAsync(f => f.Id == id, ct);
+        if (file is null) return NotFound();
+
+        var query = db.Postings.AsNoTracking().Include(p => p.Adjustments).Where(p => p.RemittanceFileId == id);
+        var org = User.OrgFilter();
+        if (org is { } o) query = query.Where(p => p.OrgId == o);
+        var postings = await query.OrderBy(p => p.ClaimNumber).ToListAsync(ct);
+        if (postings.Count == 0 && !User.IsStaff()) return NotFound();
+
+        db.AuditLog.Add(new AuditLogEntry
+        {
+            At = clock.GetUtcNow(), Actor = User.Actor(), Action = "remittance.pdf-exported", Target = id.ToString(),
+            Detail = org is null ? "all organisations" : $"org {org}"
+        });
+        await db.SaveChangesAsync(ct);
+
+        var bytes = RemittancePdf.Render(file, postings, await ReasonLookupAsync(ct), org is null ? null : "Filtered to your organisation");
+        return File(bytes, "application/pdf", $"remittance-{file.EftTraceNumber ?? file.Id.ToString("N")}.pdf");
     }
 
     [HttpGet("by-claim/{claimId:guid}")]

@@ -11,6 +11,8 @@ using ClaimBridge.ServiceDefaults.Storage;
 using Microsoft.EntityFrameworkCore;
 using Quartz;
 
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults("remittance");
 builder.AddClaimBridgeAuth();
