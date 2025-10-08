@@ -9,6 +9,7 @@
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
     <PackageReference Include="Quartz.Extensions.Hosting" />
     <PackageReference Include="CsvHelper" />
+    <PackageReference Include="QuestPDF" />
     <PackageReference Include="Google.Protobuf" />
     <PackageReference Include="Grpc.Tools">
       <PrivateAssets>all</PrivateAssets>

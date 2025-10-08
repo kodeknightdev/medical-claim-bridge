@@ -17,6 +17,7 @@ public class ClaimProcessManager(
     ClaimTransitions transitions,
     IEventOutbox outbox,
     IOptions<LifecycleOptions> options,
+    Denials.DenialWorklist worklist,
     TimeProvider clock,
     ILogger<ClaimProcessManager> logger) : IEventHandler
 {
@@ -46,8 +47,18 @@ public class ClaimProcessManager(
             case var t when t == ClaimSubmitted.EventType: OnSubmitted(claim, state, envelope.DataAs<ClaimSubmitted>()); break;
             case var t when t == AckReceived.EventType: OnAck(claim, state, envelope.DataAs<AckReceived>()); break;
             case var t when t == PayerStatusUpdated.EventType: OnPayerStatus(claim, state, envelope.DataAs<PayerStatusUpdated>()); break;
-            case var t when t == PaymentPosted.EventType: OnPaymentPosted(claim, state, envelope.DataAs<PaymentPosted>()); break;
-            case var t when t == ClaimDenied.EventType: OnDenied(claim, state, envelope.DataAs<ClaimDenied>()); break;
+            case var t when t == PaymentPosted.EventType:
+                var payment = envelope.DataAs<PaymentPosted>();
+                OnPaymentPosted(claim, state, payment);
+                if (payment.PartiallyPaid && payment.Adjustments.FirstOrDefault(a => a.GroupCode == "CO" && a.ReasonCode != "45") is { } lineDenial)
+                    await worklist.OpenAsync(claim, lineDenial.ReasonCode,
+                        ClaimBridge.Contracts.ReferenceData.AdjustmentReasons.CategoryFor(lineDenial.ReasonCode), ct);
+                break;
+            case var t when t == ClaimDenied.EventType:
+                var denied = envelope.DataAs<ClaimDenied>();
+                OnDenied(claim, state, denied);
+                await worklist.OpenAsync(claim, denied.CarcCode, denied.Category, ct);
+                break;
             case var t when t == ReversalPosted.EventType: OnReversal(claim, envelope.DataAs<ReversalPosted>()); break;
             default:
                 logger.LogDebug("Process manager ignores {EventType}", envelope.Type);
@@ -162,8 +173,9 @@ public class ClaimProcessManager(
         if (transitions.TryFire(claim, LifecycleTrigger.RemittancePosted, "remittance",
                 $"Paid {e.PaidAmount:0.00}, patient owes {e.PatientResponsibility:0.00}, EFT {e.EftTraceNumber}"))
         {
+            // partially paid claims stay Posted so the denied lines can still be corrected or appealed
             var balance = claim.TotalCharge - e.PaidAmount - claim.AdjustmentAmount - e.PatientResponsibility;
-            if (balance == 0)
+            if (balance == 0 && !e.PartiallyPaid)
                 transitions.Fire(claim, LifecycleTrigger.Close, Source, "Payer balance resolved");
         }
     }

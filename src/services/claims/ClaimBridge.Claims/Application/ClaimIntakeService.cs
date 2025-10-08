@@ -21,6 +21,7 @@ public class ClaimIntakeService(
     ProvidersClient providers,
     ClaimTransitions transitions,
     DuplicateDetector duplicates,
+    Denials.DenialWorklist worklist,
     IEventOutbox outbox,
     TimeProvider clock)
 {
@@ -76,6 +77,7 @@ public class ClaimIntakeService(
                 source.ToString().ToLowerInvariant(),
                 claim.FrequencyCode == "7" ? $"Replaced by corrected claim {claim.ClaimNumber}" : $"Voided by {claim.ClaimNumber}");
             await transitions.ProjectAsync(original, ct);
+            await worklist.MarkAsync(original.Id, Data.DenialStatus.Corrected, ct, correctedBy: claim.Id);
         }
 
         db.Claims.Add(claim);

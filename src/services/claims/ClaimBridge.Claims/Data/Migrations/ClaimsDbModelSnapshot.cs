@@ -26,6 +26,81 @@ namespace ClaimBridge.Claims.Data.Migrations
             modelBuilder.HasSequence("ClaimNumbers")
                 .StartsAt(100000L);
 
+            modelBuilder.Entity("ClaimBridge.Claims.Data.Appeal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Argument")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("CarcCode")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
+
+                    b.Property<Guid>("ClaimId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ClaimNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateOnly>("Deadline")
+                        .HasColumnType("date");
+
+                    b.PrimitiveCollection<string>("Enclosures")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LetterBlobName")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<Guid>("OrgId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("OutcomeAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("OutcomeNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("PayerId")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("nvarchar(12)");
+
+                    b.Property<DateTimeOffset?>("SubmittedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClaimId");
+
+                    b.HasIndex("OrgId", "Status");
+
+                    b.ToTable("Appeals", "claims");
+                });
+
             modelBuilder.Entity("ClaimBridge.Claims.Data.AuditLogEntry", b =>
                 {
                     b.Property<long>("Id")
@@ -259,6 +334,66 @@ namespace ClaimBridge.Claims.Data.Migrations
                     b.HasIndex("OrgId", "Status", "CreatedAt");
 
                     b.ToTable("ClaimSearch", "claims");
+                });
+
+            modelBuilder.Entity("ClaimBridge.Claims.Data.DenialWorkItem", b =>
+                {
+                    b.Property<Guid>("ClaimId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("AppealDeadline")
+                        .HasColumnType("date");
+
+                    b.Property<Guid?>("AppealId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CarcCode")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("ClaimNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid?>("CorrectedByClaimId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("DeniedAmount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<DateTimeOffset>("DeniedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("OrgId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PayerId")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("nvarchar(12)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("ClaimId");
+
+                    b.HasIndex("OrgId", "Status");
+
+                    b.ToTable("DenialWorklist", "claims");
                 });
 
             modelBuilder.Entity("ClaimBridge.Claims.Data.IdempotencyRecord", b =>

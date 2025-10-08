@@ -16,6 +16,8 @@ public class ClaimsDb(DbContextOptions<ClaimsDb> options) : DbContext(options), 
     public DbSet<ClaimSearchEntry> SearchEntries => Set<ClaimSearchEntry>();
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
     public DbSet<Batch> Batches => Set<Batch>();
+    public DbSet<DenialWorkItem> DenialWorkItems => Set<DenialWorkItem>();
+    public DbSet<Appeal> Appeals => Set<Appeal>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<ProcessedEvent> ProcessedEvents => Set<ProcessedEvent>();
 
@@ -139,6 +141,33 @@ public class ClaimsDb(DbContextOptions<ClaimsDb> options) : DbContext(options), 
             e.Property(x => x.Status).HasConversion<string>().HasMaxLength(12);
             e.Property(x => x.UploadedBy).HasMaxLength(150);
             e.HasIndex(x => new { x.OrgId, x.UploadedAt });
+        });
+
+        b.Entity<DenialWorkItem>(e =>
+        {
+            e.ToTable("DenialWorklist");
+            e.HasKey(x => x.ClaimId);
+            e.Property(x => x.ClaimNumber).HasMaxLength(20);
+            e.Property(x => x.PayerId).HasMaxLength(20);
+            e.Property(x => x.CarcCode).HasMaxLength(5);
+            e.Property(x => x.Category).HasMaxLength(30);
+            e.Property(x => x.DeniedAmount).HasPrecision(12, 2);
+            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(12);
+            e.HasIndex(x => new { x.OrgId, x.Status });
+        });
+
+        b.Entity<Appeal>(e =>
+        {
+            e.Property(x => x.ClaimNumber).HasMaxLength(20);
+            e.Property(x => x.PayerId).HasMaxLength(20);
+            e.Property(x => x.CarcCode).HasMaxLength(5);
+            e.Property(x => x.Argument).HasMaxLength(4000);
+            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(12);
+            e.Property(x => x.CreatedBy).HasMaxLength(150);
+            e.Property(x => x.OutcomeNote).HasMaxLength(500);
+            e.Property(x => x.LetterBlobName).HasMaxLength(250);
+            e.HasIndex(x => new { x.OrgId, x.Status });
+            e.HasIndex(x => x.ClaimId);
         });
 
         b.Entity<AuditLogEntry>(e =>

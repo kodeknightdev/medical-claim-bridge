@@ -88,6 +88,12 @@
           "Quartz.Extensions.DependencyInjection": "3.14.0"
         }
       },
+      "QuestPDF": {
+        "type": "Direct",
+        "requested": "[2025.7.0, )",
+        "resolved": "2025.7.0",
+        "contentHash": "yRjdm7p300eEuy4Mi9YdMuecl2cvTU/CV+IHHDzw22Uf43/0C2zeG4c+MthZqkpQNJPg0Agha1iBSmLBxX1vHA=="
+      },
       "Azure.Core": {
         "type": "Transitive",
         "resolved": "1.44.1",

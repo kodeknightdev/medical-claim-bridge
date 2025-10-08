@@ -17,6 +17,8 @@ using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Quartz;
 
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults("claims");
 builder.AddClaimBridgeAuth();
@@ -63,6 +65,8 @@ builder.Services.AddScoped<ClaimIntakeService>();
 builder.Services.AddScoped<DuplicateDetector>();
 builder.Services.AddScoped<ClaimBridge.Claims.Api.IdempotencyFilter>();
 builder.Services.AddScoped<ClaimReadModelProjector>();
+builder.Services.AddScoped<ClaimBridge.Claims.Denials.DenialWorklist>();
+builder.Services.Configure<ClaimBridge.Claims.Denials.AppealOptions>(config.GetSection("Appeals"));
 builder.Services.AddValidatorsFromAssemblyContaining<ClaimRequestValidator>();
 
 builder.Services.AddHealthChecks().AddSqlServerReadiness(config, "ClaimsDb");
