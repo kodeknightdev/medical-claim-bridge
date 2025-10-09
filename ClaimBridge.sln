@@ -47,6 +47,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "notifications", "notificati
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClaimBridge.Notifications", "src\services\notifications\ClaimBridge.Notifications\ClaimBridge.Notifications.csproj", "{2768E041-C372-47A1-A463-3BEC3311FBB0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClaimBridge.WebhookReceiver", "tools\webhook-receiver\ClaimBridge.WebhookReceiver\ClaimBridge.WebhookReceiver.csproj", "{5E647F3C-12D3-4D12-B40D-5550AA451919}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -189,6 +191,18 @@ Global
 		{2768E041-C372-47A1-A463-3BEC3311FBB0}.Release|x64.Build.0 = Release|Any CPU
 		{2768E041-C372-47A1-A463-3BEC3311FBB0}.Release|x86.ActiveCfg = Release|Any CPU
 		{2768E041-C372-47A1-A463-3BEC3311FBB0}.Release|x86.Build.0 = Release|Any CPU
+		{5E647F3C-12D3-4D12-B40D-5550AA451919}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E647F3C-12D3-4D12-B40D-5550AA451919}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E647F3C-12D3-4D12-B40D-5550AA451919}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5E647F3C-12D3-4D12-B40D-5550AA451919}.Debug|x64.Build.0 = Debug|Any CPU
+		{5E647F3C-12D3-4D12-B40D-5550AA451919}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5E647F3C-12D3-4D12-B40D-5550AA451919}.Debug|x86.Build.0 = Debug|Any CPU
+		{5E647F3C-12D3-4D12-B40D-5550AA451919}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E647F3C-12D3-4D12-B40D-5550AA451919}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E647F3C-12D3-4D12-B40D-5550AA451919}.Release|x64.ActiveCfg = Release|Any CPU
+		{5E647F3C-12D3-4D12-B40D-5550AA451919}.Release|x64.Build.0 = Release|Any CPU
+		{5E647F3C-12D3-4D12-B40D-5550AA451919}.Release|x86.ActiveCfg = Release|Any CPU
+		{5E647F3C-12D3-4D12-B40D-5550AA451919}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -214,5 +228,6 @@ Global
 		{BAAE5785-F33E-4166-929D-A161770D5D22} = {2DE50A0F-F188-2443-97DA-811DB3C2E04C}
 		{40B59F69-022F-A9EE-E3B7-096C1E81294B} = {984BB9B3-3FA3-BE33-9484-CAC21695A33C}
 		{2768E041-C372-47A1-A463-3BEC3311FBB0} = {40B59F69-022F-A9EE-E3B7-096C1E81294B}
+		{5E647F3C-12D3-4D12-B40D-5550AA451919} = {07C2787E-EAC7-C090-1BA3-A61EC2A24D84}
 	EndGlobalSection
 EndGlobal

@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\shared\ClaimBridge.Contracts\ClaimBridge.Contracts.csproj" />
+  </ItemGroup>
+</Project>
