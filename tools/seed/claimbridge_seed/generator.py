@@ -7,10 +7,14 @@ from __future__ import annotations
 
 import math
 import random
+import uuid
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 
 from .reference import (CARC_CATEGORY, ENCOUNTERS, ENROLLED, ORGS, PAYERS, PRIOR_AUTH_REQUIRED, PROCEDURES)
+
+# claim ids are derived from claim numbers so every service's seed import agrees on them
+CLAIM_NAMESPACE = uuid.UUID("c1a1b000-0000-4000-8000-000000000000")
 
 SYLLABLES_FIRST = ["Ka", "Lo", "Mi", "Ra", "Te", "Vo", "Ze", "Ni", "Da", "Fe", "Jo", "Su", "Ari", "Bel", "Cor", "Dax"]
 SYLLABLES_LAST = ["mor", "vane", "drel", "quist", "lund", "bry", "tark", "selm", "wynd", "hollo", "pren", "zett"]
@@ -178,8 +182,10 @@ def generate_history(cfg: GeneratorConfig, members: list[dict]) -> list[dict]:
         adjudicated = submitted + timedelta(days=turnaround)
         still_open = adjudicated >= today
 
+        number = f"CB{submitted:%y}{n + 1:07d}"
         claim = {
-            "claimNumber": f"CB{submitted:%y}{n + 1:07d}",
+            "claimId": str(uuid.uuid5(CLAIM_NAMESPACE, number)),
+            "claimNumber": number,
             "orgId": org_id, "payerId": payer, "billingNpi": org["npi"], "renderingNpi": rng.choice(org["rendering"]),
             "memberId": member["memberId"],
             "patient": {"firstName": member["firstName"], "lastName": member["lastName"], "dateOfBirth": member["dateOfBirth"],
