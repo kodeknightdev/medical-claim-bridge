@@ -21,6 +21,9 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.8" />
     <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.8" />
   </ItemGroup>
+  <ItemGroup Label="Gateway">
+    <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
+  </ItemGroup>
   <ItemGroup Label="Identity">
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.8" />
     <PackageVersion Include="OpenIddict.AspNetCore" Version="6.4.0" />

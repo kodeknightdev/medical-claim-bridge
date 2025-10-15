@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <PackageReference Include="Yarp.ReverseProxy" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\shared\ClaimBridge.ServiceDefaults\ClaimBridge.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\..\shared\ClaimBridge.Contracts\ClaimBridge.Contracts.csproj" />
+  </ItemGroup>
+</Project>
