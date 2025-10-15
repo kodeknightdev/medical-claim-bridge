@@ -27,6 +27,7 @@ builder.Services.AddClaimBridgeMessaging<RemittanceDb>(config, "remittance")
 builder.Services.AddScoped<PostingService>();
 builder.Services.AddSingleton<RemittanceMetrics>();
 builder.Services.AddScoped<ArSnapshotService>();
+builder.Services.AddScoped<ClaimBridge.Remittance.Seeding.HistoryImporter>();
 builder.Services.AddQuartz(q =>
 {
     var retry = new JobKey("reconciliation-retry");

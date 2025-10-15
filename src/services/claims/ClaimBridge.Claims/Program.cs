@@ -66,6 +66,7 @@ builder.Services.AddScoped<DuplicateDetector>();
 builder.Services.AddScoped<ClaimBridge.Claims.Api.IdempotencyFilter>();
 builder.Services.AddScoped<ClaimReadModelProjector>();
 builder.Services.AddScoped<ClaimBridge.Claims.Denials.DenialWorklist>();
+builder.Services.AddScoped<ClaimBridge.Claims.Seeding.HistoryImporter>();
 builder.Services.Configure<ClaimBridge.Claims.Denials.AppealOptions>(config.GetSection("Appeals"));
 builder.Services.AddValidatorsFromAssemblyContaining<ClaimRequestValidator>();
 
