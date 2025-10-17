@@ -9,7 +9,12 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./denial-predictor.db"
     model_dir: str = "./models"
     kafka_bootstrap_servers: str = ""
-    blob_connection_string: str = "UseDevelopmentStorage=true"
+    # Azurite's published development account; real deployments inject a connection string
+    blob_connection_string: str = (
+        "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;"
+        "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;"
+        "BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
+    )
     auth_issuer: str = "http://localhost:5000/"
     auth_authority: str = "http://localhost:5101/"
     auth_audience: str = "claim-bridge-api"

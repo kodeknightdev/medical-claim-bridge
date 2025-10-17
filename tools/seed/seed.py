@@ -16,9 +16,13 @@ from azure.storage.blob import BlobServiceClient
 from claimbridge_seed.generator import GeneratorConfig, generate_history, generate_members
 
 logging.basicConfig(level=logging.INFO, format="[seed] %(message)s")
+logging.getLogger("azure").setLevel(logging.WARNING)
 log = logging.getLogger()
 
-BLOB = os.getenv("BLOB_CONNECTION_STRING", "UseDevelopmentStorage=true")
+# defaults to Azurite's published development account
+BLOB = os.getenv("BLOB_CONNECTION_STRING", "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;"
+                 "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;"
+                 "BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;")
 CONTAINER = "seed"
 SERVICES = {
     "claims": os.getenv("CLAIMS_URL", "http://localhost:5103"),

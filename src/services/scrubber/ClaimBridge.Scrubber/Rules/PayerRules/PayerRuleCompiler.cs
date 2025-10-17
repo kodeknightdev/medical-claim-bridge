@@ -27,7 +27,8 @@ public static class PayerRuleCompiler
         try
         {
             using var doc = JsonDocument.Parse(json);
-            return Compile(doc.RootElement);
+            // the specs keep references to element values, so detach them from the pooled document
+            return Compile(doc.RootElement.Clone());
         }
         catch (JsonException ex)
         {

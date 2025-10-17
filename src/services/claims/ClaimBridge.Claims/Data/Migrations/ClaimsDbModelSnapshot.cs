@@ -766,10 +766,7 @@ namespace ClaimBridge.Claims.Data.Migrations
                                 .HasColumnType("uniqueidentifier");
 
                             b1.Property<int>("LineNumber")
-                                .ValueGeneratedOnAdd()
                                 .HasColumnType("int");
-
-                            SqlServerPropertyBuilderExtensions.UseIdentityColumn(b1.Property<int>("LineNumber"));
 
                             b1.Property<decimal>("Charge")
                                 .HasPrecision(12, 2)

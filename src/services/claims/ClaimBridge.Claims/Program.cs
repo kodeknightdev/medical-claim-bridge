@@ -24,7 +24,8 @@ builder.AddServiceDefaults("claims");
 builder.AddClaimBridgeAuth();
 
 var config = builder.Configuration;
-builder.Services.AddDbContext<ClaimsDb>(o => o.UseSqlServer(config.GetConnectionString("ClaimsDb")));
+builder.Services.AddDbContext<ClaimsDb>(o => o.UseSqlServer(config.GetConnectionString("ClaimsDb"),
+    sql => sql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 builder.Services.AddPhiProtection(config);
 builder.Services.AddClaimBridgeCaching(config);
 builder.Services.AddClaimBridgeBlobStorage(config);
@@ -50,7 +51,11 @@ builder.Services.AddGrpcClient<ClaimScrubber.ClaimScrubberClient>(o => o.Address
 builder.Services.AddHttpClient<ProvidersClient>(c => c.BaseAddress = new Uri(config["Services:Providers"]!))
     .AddStandardResilienceHandler();
 builder.Services.AddHttpClient<EligibilityClient>(c => c.BaseAddress = new Uri(config["Services:PayersGateway"]!))
-    .AddStandardResilienceHandler(o => o.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(8));
+    .AddStandardResilienceHandler(o =>
+    {
+        o.AttemptTimeout.Timeout = TimeSpan.FromSeconds(3);
+        o.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(8);
+    });
 builder.Services.AddHttpClient<StatusInquiryClient>(c => c.BaseAddress = new Uri(config["Services:PayersGateway"]!));
 builder.Services.AddHttpClient<RiskClient>(c =>
 {

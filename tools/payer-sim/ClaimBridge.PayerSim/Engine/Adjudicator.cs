@@ -66,7 +66,9 @@ public sealed class Adjudicator(MemberDirectory members, SimScenario scenario)
             var allowed = Math.Round(line.Charge * FeeFactor(claim.PayerId), 2);
             if (line.Charge > allowed) adjustments.Add(new Adjustment("CO", "45", line.Charge - allowed));
 
-            var lineDeductible = Math.Min(deductibleLeft, allowed);
+            // Northwind's PPO covers office visits with a copay before the deductible
+            var copayOnly = claim.PayerId == SeedIds.PayerA && EmCodes.Contains(line.ProcedureCode);
+            var lineDeductible = copayOnly ? 0 : Math.Min(deductibleLeft, allowed);
             deductibleLeft -= lineDeductible;
             var remaining = allowed - lineDeductible;
 

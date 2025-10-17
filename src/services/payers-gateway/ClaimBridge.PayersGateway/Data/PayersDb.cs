@@ -66,7 +66,7 @@ public class PayersDb(DbContextOptions<PayersDb> options) : DbContext(options), 
 public static class PayersDbExtensions
 {
     public static async Task<int> NextInterchangeControlNumberAsync(this PayersDb db, CancellationToken ct) =>
-        await db.Database.SqlQueryRaw<int>("SELECT NEXT VALUE FOR [payers].[InterchangeControlNumbers] AS [Value]").SingleAsync(ct);
+        (await db.Database.SqlQueryRaw<int>("SELECT NEXT VALUE FOR [payers].[InterchangeControlNumbers] AS [Value]").ToListAsync(ct)).Single();
 }
 
 public class DesignTimeFactory : IDesignTimeDbContextFactory<PayersDb>

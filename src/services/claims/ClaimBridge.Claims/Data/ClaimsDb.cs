@@ -72,6 +72,8 @@ public class ClaimsDb(DbContextOptions<ClaimsDb> options) : DbContext(options), 
                 l.ToTable("ServiceLines");
                 l.WithOwner().HasForeignKey("ClaimId");
                 l.HasKey("ClaimId", nameof(ServiceLine.LineNumber));
+                // line numbers come from the claim, never from SQL Server
+                l.Property(x => x.LineNumber).ValueGeneratedNever();
                 l.Property(x => x.ProcedureCode).HasMaxLength(5);
                 l.Property(x => x.PlaceOfService).HasMaxLength(2);
                 l.Property(x => x.Units).HasPrecision(7, 2);
@@ -183,7 +185,8 @@ public class ClaimsDb(DbContextOptions<ClaimsDb> options) : DbContext(options), 
 
     public async Task<string> NextClaimNumberAsync(DateTimeOffset now, CancellationToken ct)
     {
-        var seq = await Database.SqlQueryRaw<long>($"SELECT NEXT VALUE FOR [{Schema}].[ClaimNumbers] AS [Value]").SingleAsync(ct);
+        // no LINQ on top: EF would wrap it in a subquery, where NEXT VALUE FOR is not allowed
+        var seq = (await Database.SqlQueryRaw<long>($"SELECT NEXT VALUE FOR [{Schema}].[ClaimNumbers] AS [Value]").ToListAsync(ct)).Single();
         return $"CB{now:yy}{seq:D7}";
     }
 }
