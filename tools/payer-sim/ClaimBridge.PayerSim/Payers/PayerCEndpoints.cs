@@ -1,6 +1,7 @@
 using System.Globalization;
 using ClaimBridge.Contracts.Reference;
 using ClaimBridge.PayerSim.Engine;
+using Microsoft.AspNetCore.Mvc;
 
 namespace ClaimBridge.PayerSim.Payers;
 
@@ -93,7 +94,7 @@ public static class SimControlEndpoints
     {
         var group = app.MapGroup("/sim").WithTags("Simulator control");
         group.MapGet("/scenarios", (SimScenario s) => s);
-        group.MapPost("/scenarios", (SimScenario update, SimScenario s) =>
+        group.MapPost("/scenarios", ([FromBody] SimScenario update, SimScenario s) =>
         {
             s.PayerCOutage = update.PayerCOutage;
             s.PayerCFailureRate = update.PayerCFailureRate;

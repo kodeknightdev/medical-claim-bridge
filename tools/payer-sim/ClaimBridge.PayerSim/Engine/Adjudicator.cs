@@ -55,6 +55,16 @@ public sealed class Adjudicator(MemberDirectory members, SimScenario scenario)
                 services.Add(new ServicePayment(line.ProcedureCode, line.Modifiers, line.Charge, 0, line.Units, line.ServiceDate, 0, adjustments, remarks));
                 continue;
             }
+            // Bluepeak bundles the blood draw into any lab panel billed the same day
+            if (claim.PayerId == SeedIds.PayerB && line.ProcedureCode == "36415" &&
+                claim.Lines.Any(l => l.ServiceDate == line.ServiceDate && l.ProcedureCode is "80053" or "80061" or "85025" or "83036"))
+            {
+                anyLineDenied = true;
+                adjustments.Add(new Adjustment("CO", "97", line.Charge));
+                remarks.Add("M15");
+                services.Add(new ServicePayment(line.ProcedureCode, line.Modifiers, line.Charge, 0, line.Units, line.ServiceDate, 0, adjustments, remarks));
+                continue;
+            }
             if (claim.PayerId == SeedIds.PayerB && line.Modifiers.Contains("59"))
             {
                 anyLineDenied = true;
