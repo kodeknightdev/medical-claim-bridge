@@ -1,0 +1,29 @@
+@use '@angular/material' as mat;
+
+html {
+  color-scheme: light;
+  @include mat.theme((
+    color: (primary: mat.$azure-palette, tertiary: mat.$blue-palette),
+    typography: Roboto,
+    density: -1
+  ));
+}
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, 'Helvetica Neue', sans-serif; background: #f4f6f9; }
+
+.page { padding: 20px 24px; max-width: 1400px; }
+.page-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.page-title h1 { font-size: 22px; font-weight: 500; margin: 0; }
+.muted { color: #66707d; }
+.grid { display: grid; gap: 16px; }
+.grid.kpis { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.grid.two { grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
+.full { width: 100%; }
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.spacer { flex: 1; }
+table.mat-mdc-table { width: 100%; }
+.edit-error { color: #b3261e; }
+.edit-warning { color: #8a5a00; }
+.demo-note { font-size: 12px; color: #66707d; font-style: italic; }
+.chart { height: 300px; width: 100%; }
