@@ -8,6 +8,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { OidcSecurityService } from 'angular-auth-oidc-client';
 import { CurrentUser, Role } from './core/auth/current-user';
 
+const RETURN_URL_KEY = 'cb.returnUrl';
+
 interface NavItem {
   path: string;
   label: string;
@@ -36,7 +38,7 @@ export const NAV: NavItem[] = [
   template: `
     @if (ready()) {
       <mat-sidenav-container class="shell">
-        <mat-sidenav mode="side" opened class="nav">
+        <mat-sidenav mode="side" opened class="nav app-nav">
           <div class="brand">claim-bridge</div>
           <mat-nav-list>
             @for (item of visibleNav(); track item.path) {
@@ -57,6 +59,8 @@ export const NAV: NavItem[] = [
           <router-outlet />
         </mat-sidenav-content>
       </mat-sidenav-container>
+    } @else if (failed()) {
+      <div class="loading">Sign-in failed: {{ failed() }} <button mat-button (click)="user.login()">Try again</button></div>
     } @else {
       <div class="loading">Signing in…</div>
     }
@@ -78,19 +82,33 @@ export class AppComponent implements OnInit {
   private readonly router = inject(Router);
   readonly user = inject(CurrentUser);
   readonly ready = signal(false);
+  readonly failed = signal<string | null>(null);
 
   visibleNav(): NavItem[] {
     return NAV.filter(n => !n.roles || this.user.hasAnyRole(...n.roles));
   }
 
   ngOnInit(): void {
-    this.oidc.checkAuth().subscribe(({ isAuthenticated }) => {
-      if (!isAuthenticated) {
-        this.oidc.authorize();
-        return;
-      }
-      this.ready.set(true);
-      if (this.router.url.startsWith('/callback')) this.router.navigateByUrl('/');
+    this.oidc.checkAuth().subscribe({
+      next: ({ isAuthenticated, errorMessage }) => {
+        if (!isAuthenticated) {
+          // never bounce straight back to the identity server from a failed callback, or a bad state loops forever
+          if (window.location.pathname.startsWith('/callback') || errorMessage) {
+            this.failed.set(errorMessage ?? 'Sign-in did not complete.');
+            return;
+          }
+          sessionStorage.setItem(RETURN_URL_KEY, window.location.pathname + window.location.search);
+          this.oidc.authorize();
+          return;
+        }
+        this.ready.set(true);
+        if (window.location.pathname.startsWith('/callback')) {
+          const back = sessionStorage.getItem(RETURN_URL_KEY) ?? '/';
+          sessionStorage.removeItem(RETURN_URL_KEY);
+          this.router.navigateByUrl(back.startsWith('/callback') ? '/' : back);
+        }
+      },
+      error: (err: Error) => this.failed.set(err.message)
     });
   }
 }

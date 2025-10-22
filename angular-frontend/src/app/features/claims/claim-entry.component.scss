@@ -1,0 +1,14 @@
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+.claim-form mat-card { margin-bottom: 16px; }
+.side { position: sticky; top: 80px; display: grid; gap: 16px; }
+.narrow { width: 140px; }
+.tiny { width: 84px; }
+.line { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; border-bottom: 1px solid #eef1f5; padding-top: 8px; }
+.line-no { width: 20px; color: #66707d; }
+.line-edit { flex-basis: 100%; font-size: 13px; padding: 0 0 8px 28px; }
+.edit { font-size: 13px; margin-bottom: 8px; }
+.fix { color: #4a5462; font-style: italic; }
+.ok { color: #1e6b35; }
+.eligibility { padding: 8px 12px; background: #e3f4e8; border-radius: 4px; margin-bottom: 12px; font-size: 13px; }
+.eligibility.inactive { background: #fde4e1; }
+.actions { display: flex; gap: 16px; align-items: center; margin-bottom: 40px; }
