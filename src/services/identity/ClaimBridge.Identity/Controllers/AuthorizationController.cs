@@ -99,7 +99,9 @@ public class AuthorizationController(
     [HttpGet("~/connect/userinfo"), HttpPost("~/connect/userinfo")]
     public async Task<IActionResult> UserInfo()
     {
-        var user = await users.FindByIdAsync(User.GetClaim(Claims.Subject) ?? "");
+        // the identity cookie may be present too, so read the token's principal rather than the merged User
+        var token = await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        var user = await users.FindByIdAsync(token.Principal?.GetClaim(Claims.Subject) ?? "");
         if (user is null)
             return Challenge(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
 
