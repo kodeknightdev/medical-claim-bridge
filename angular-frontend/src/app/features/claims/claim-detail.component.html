@@ -1,0 +1,98 @@
+<div class="page">
+  @if (claim(); as c) {
+    <div class="page-title">
+      <h1>Claim {{ c.summary.claimNumber }} <cb-status [status]="c.summary.status" /></h1>
+      <div class="row">
+        @if (canFix()) { <a mat-flat-button [routerLink]="['/claims', c.summary.id, 'edit']">Fix and re-scrub</a> }
+        @if (canCorrect()) {
+          <a mat-stroked-button [routerLink]="['/claims', c.summary.id, 'correct']">Corrected claim</a>
+          <button mat-stroked-button (click)="voidClaim()">Void</button>
+        }
+        @if (c.summary.status === 'Denied') { <a mat-stroked-button routerLink="/denials">Appeal</a> }
+      </div>
+    </div>
+    @if (details()?.partial) {
+      <div class="partial">Some details are temporarily unavailable: {{ details()?.unavailable?.join(', ') }}.</div>
+    }
+    <div class="grid two">
+      <mat-card>
+        <mat-card-header><mat-card-title>Summary</mat-card-title></mat-card-header>
+        <mat-card-content>
+          <dl>
+            <dt>Payer</dt><dd>{{ c.summary.payerId }} @if (c.payerClaimId) { · payer ref {{ c.payerClaimId }} }</dd>
+            <dt>Patient</dt><dd>{{ c.patient.lastName }}, {{ c.patient.firstName }} · {{ c.patient.memberId }} · DOB {{ c.patient.dateOfBirth }}</dd>
+            <dt>Billing / rendering NPI</dt><dd>{{ c.billingNpi }} / {{ c.renderingNpi ?? '–' }}</dd>
+            <dt>Version</dt><dd>{{ c.summary.version }} (frequency {{ c.summary.frequencyCode }})
+              @if (c.previousClaimId) { · <a [routerLink]="['/claims', c.previousClaimId]">previous version</a> }
+              @if (c.supersededByClaimId) { · <a [routerLink]="['/claims', c.supersededByClaimId]">replaced by</a> }</dd>
+            <dt>Charge / paid / patient</dt>
+            <dd>{{ c.summary.totalCharge | currency }} / {{ c.summary.paidAmount ?? 0 | currency }} / {{ c.patientResponsibility ?? 0 | currency }}</dd>
+            @if (c.denialCarc) { <dt>Denial</dt><dd>CARC {{ c.denialCarc }} · {{ c.denialCategory }}</dd> }
+            @if (c.possibleDuplicateOf) { <dt>Possible duplicate of</dt><dd>{{ c.possibleDuplicateOf }}</dd> }
+          </dl>
+          <h3>Diagnoses</h3>
+          <p>@for (d of c.diagnoses; track $index) { <span class="code">{{ $index + 1 }}. {{ d }}</span> }</p>
+          <h3>Service lines</h3>
+          <table class="lines">
+            <tr><th>#</th><th>Code</th><th>Mods</th><th>Units</th><th>Charge</th><th>DOS</th><th>POS</th><th>Ptr</th></tr>
+            @for (l of c.lines; track l.lineNumber) {
+              <tr><td>{{ l.lineNumber }}</td><td>{{ l.procedureCode }}</td><td>{{ l.modifiers.join(', ') }}</td><td>{{ l.units }}</td>
+                <td>{{ l.charge | currency }}</td><td>{{ l.serviceDate }}</td><td>{{ l.placeOfService }}</td><td>{{ l.dxPointers.join(',') }}</td></tr>
+            }
+          </table>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-header><mat-card-title>Timeline</mat-card-title></mat-card-header>
+        <mat-card-content>
+          <ol class="timeline">
+            @for (t of details()?.timeline ?? []; track $index) {
+              <li [class]="t.source">
+                <span class="when">{{ t.at | date: 'MMM d, HH:mm:ss' }}</span>
+                <span class="src">{{ t.source }}</span>
+                <span class="what"><strong>{{ t.kind }}</strong> {{ t.text }}</span>
+              </li>
+            }
+          </ol>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <mat-tab-group class="tabs">
+      <mat-tab label="Scrub results">
+        @if (latestScrub(); as s) {
+          <p class="tab-pad">Last run {{ s.ranAt | date: 'medium' }}: {{ s.passed ? 'passed' : 'failed' }} with {{ s.errorCount }} error(s), {{ s.warningCount }} warning(s).</p>
+          @for (e of s.edits; track $index) {
+            <div class="tab-pad" [class.edit-error]="e.severity === 'Error'" [class.edit-warning]="e.severity === 'Warning'">
+              {{ e.ruleCode }} @if (e.lineNumber) { (line {{ e.lineNumber }}) }: {{ e.message }} <em>{{ e.fixSuggestion }}</em>
+            </div>
+          }
+        } @else { <p class="tab-pad muted">No scrub runs recorded.</p> }
+      </mat-tab>
+      <mat-tab label="Payer submissions">
+        @for (s of details()?.payerHistory?.submissions ?? []; track s.id) {
+          <p class="tab-pad">Attempt {{ s.attempt }} via {{ s.channel }} @if (s.fileName) { in {{ s.fileName }} } · <cb-status [status]="s.status" />
+            @if (s.rejectReasons) { <span class="edit-error"> {{ s.rejectReasons }}</span> }
+            @if (s.lastError) { <span class="muted"> last error: {{ s.lastError }}</span> }</p>
+        } @empty { <p class="tab-pad muted">Not sent to the payer yet.</p> }
+      </mat-tab>
+      <mat-tab label="Remittance">
+        @for (p of details()?.remittance ?? []; track p.id) {
+          <div class="tab-pad">
+            <strong>{{ p.kind }}</strong> {{ p.postedAt | date: 'medium' }} · paid {{ p.paid | currency }} of {{ p.charge | currency }},
+            allowed {{ p.allowed | currency }}, patient {{ p.patientResponsibility | currency }}
+            <ul>@for (a of p.adjustments; track $index) { <li>{{ a.groupCode }}-{{ a.reasonCode }} {{ a.amount | currency }} <span class="muted">{{ a.explanation }}</span></li> }</ul>
+          </div>
+        } @empty { <p class="tab-pad muted">No remittance posted yet.</p> }
+      </mat-tab>
+      <mat-tab label="Denial risk">
+        <div class="tab-pad">
+          <cb-risk [probability]="details()?.risk?.probability ?? c.summary.denialRisk" [factors]="details()?.risk?.factors ?? c.denialRiskFactors ?? []" />
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  } @else {
+    <p class="muted">Loading claim…</p>
+  }
+</div>

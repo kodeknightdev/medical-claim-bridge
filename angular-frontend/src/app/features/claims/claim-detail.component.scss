@@ -1,0 +1,15 @@
+dl { display: grid; grid-template-columns: 170px 1fr; gap: 4px 12px; margin: 0 0 12px; }
+dt { color: #66707d; }
+dd { margin: 0; }
+h3 { font-size: 14px; margin: 12px 0 6px; }
+.code { margin-right: 12px; }
+.lines { width: 100%; border-collapse: collapse; font-size: 13px; }
+.lines th, .lines td { text-align: left; padding: 4px 6px; border-bottom: 1px solid #eef1f5; }
+.timeline { list-style: none; padding: 0; margin: 0; max-height: 480px; overflow: auto; }
+.timeline li { display: grid; grid-template-columns: 120px 80px 1fr; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f0f2f5; font-size: 13px; }
+.timeline .src { font-size: 11px; text-transform: uppercase; color: #66707d; }
+.timeline li.payer .src { color: #1d4f8c; }
+.timeline li.remittance .src { color: #1e6b35; }
+.tabs { margin-top: 16px; background: #fff; }
+.tab-pad { padding: 8px 16px; }
+.partial { background: #fff3d6; padding: 8px 12px; border-radius: 4px; margin-bottom: 12px; }
