@@ -13,5 +13,7 @@ export const routes: Routes = [
   { path: 'claims/:id/correct', loadComponent: () => import('./features/claims/claim-entry.component').then(m => m.ClaimEntryComponent) },
   { path: 'claims', loadComponent: () => import('./features/claims/claims-list.component').then(m => m.ClaimsListComponent) },
   { path: 'claims/:id', loadComponent: () => import('./features/claims/claim-detail.component').then(m => m.ClaimDetailComponent) },
+  { path: 'batches', loadComponent: () => import('./features/batches/batches.component').then(m => m.BatchesComponent) },
+  { path: 'eligibility', loadComponent: () => import('./features/eligibility/eligibility.component').then(m => m.EligibilityComponent) },
   { path: '**', redirectTo: '' }
 ];
