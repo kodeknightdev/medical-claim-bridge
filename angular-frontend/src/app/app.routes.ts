@@ -16,5 +16,8 @@ export const routes: Routes = [
   { path: 'batches', loadComponent: () => import('./features/batches/batches.component').then(m => m.BatchesComponent) },
   { path: 'eligibility', loadComponent: () => import('./features/eligibility/eligibility.component').then(m => m.EligibilityComponent) },
   { path: 'denials', loadComponent: () => import('./features/denials/denials.component').then(m => m.DenialsComponent) },
+  { path: 'remittances', loadComponent: () => import('./features/remittances/remittances.component').then(m => m.RemittancesComponent) },
+  { path: 'remittances/:id', loadComponent: () => import('./features/remittances/remittance-detail.component').then(m => m.RemittanceDetailComponent) },
+  { path: 'enrollment', loadComponent: () => import('./features/enrollment/enrollment.component').then(m => m.EnrollmentComponent) },
   { path: '**', redirectTo: '' }
 ];
