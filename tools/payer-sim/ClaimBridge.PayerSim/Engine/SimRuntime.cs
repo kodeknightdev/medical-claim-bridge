@@ -93,7 +93,8 @@ public sealed class RemittanceWriter(BlobServiceClient blobs, ILogger<Remittance
         if (payments.Count == 0) return;
         var now = DateTimeOffset.UtcNow;
         var control = Interlocked.Increment(ref _control);
-        var trace = $"EFT{now:yyyyMMdd}{Interlocked.Increment(ref _eft):D5}";
+        // time-based so trace numbers stay unique across simulator restarts
+        var trace = $"EFT{now:yyyyMMddHHmmss}{Interlocked.Increment(ref _eft) % 1000:D3}";
         var payer = PayerDirectory.Find(payerId)!;
         var advice = new RemittanceAdvice(payer.Name, payeeNpi, trace, DateOnly.FromDateTime(now.UtcDateTime),
             payments.Sum(p => p.PaidAmount), "ACH", payments);
