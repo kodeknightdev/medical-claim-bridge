@@ -19,5 +19,10 @@ export const routes: Routes = [
   { path: 'remittances', loadComponent: () => import('./features/remittances/remittances.component').then(m => m.RemittancesComponent) },
   { path: 'remittances/:id', loadComponent: () => import('./features/remittances/remittance-detail.component').then(m => m.RemittanceDetailComponent) },
   { path: 'enrollment', loadComponent: () => import('./features/enrollment/enrollment.component').then(m => m.EnrollmentComponent) },
+  {
+    path: 'integrations',
+    canActivate: [roleGuard('Admin', 'OpsAnalyst', 'ProviderAdmin')],
+    loadComponent: () => import('./features/integrations/integrations.component').then(m => m.IntegrationsComponent)
+  },
   { path: '**', redirectTo: '' }
 ];

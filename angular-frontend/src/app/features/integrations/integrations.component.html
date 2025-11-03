@@ -1,0 +1,82 @@
+<div class="page">
+  <div class="page-title"><h1>API clients &amp; webhooks</h1></div>
+  @if (revealed(); as r) {
+    <div class="secret"><strong>{{ r.label }}:</strong> {{ r.value }} <button mat-button (click)="revealed.set(null)">I saved it</button></div>
+  }
+  <mat-tab-group>
+    <mat-tab label="API clients">
+      @if (user.canManageOrg()) {
+        <mat-card class="mt">
+          <mat-card-content class="row">
+            <mat-form-field><mat-label>Name of the system</mat-label><input matInput [(ngModel)]="newClient.displayName"></mat-form-field>
+            <mat-checkbox [(ngModel)]="newClient.submit">claims.submit</mat-checkbox>
+            <mat-checkbox [(ngModel)]="newClient.read">claims.read</mat-checkbox>
+            <mat-form-field style="width: 140px"><mat-label>Requests / minute</mat-label><input matInput type="number" [(ngModel)]="newClient.rate"></mat-form-field>
+            <button mat-flat-button (click)="createClient()" [disabled]="newClient.displayName.length < 3">Create client</button>
+          </mat-card-content>
+        </mat-card>
+      }
+      <table mat-table [dataSource]="clients()" class="mt">
+        <ng-container matColumnDef="name"><th mat-header-cell *matHeaderCellDef>Name</th><td mat-cell *matCellDef="let c">{{ c.displayName }}</td></ng-container>
+        <ng-container matColumnDef="clientId"><th mat-header-cell *matHeaderCellDef>Client ID</th><td mat-cell *matCellDef="let c"><code>{{ c.clientId }}</code></td></ng-container>
+        <ng-container matColumnDef="scopes"><th mat-header-cell *matHeaderCellDef>Scopes</th><td mat-cell *matCellDef="let c">{{ c.scopes.join(' ') }}</td></ng-container>
+        <ng-container matColumnDef="rate"><th mat-header-cell *matHeaderCellDef>Rate limit</th><td mat-cell *matCellDef="let c">{{ c.rateLimitPerMinute }}/min</td></ng-container>
+        <ng-container matColumnDef="status"><th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let c"><cb-status [status]="c.revokedAt ? 'Voided' : 'Active'" />
+            @if (c.secretRotatedAt) { <span class="muted"> rotated {{ c.secretRotatedAt | date }}</span> }</td></ng-container>
+        <ng-container matColumnDef="actions"><th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let c">
+            @if (!c.revokedAt && user.canManageOrg()) {
+              <button mat-button (click)="rotate(c)">Rotate secret</button>
+              <button mat-button (click)="revoke(c)">Revoke</button>
+            }
+          </td></ng-container>
+        <tr mat-header-row *matHeaderRowDef="clientColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: clientColumns"></tr>
+      </table>
+    </mat-tab>
+
+    <mat-tab label="Webhooks">
+      @if (user.canManageOrg()) {
+        <mat-card class="mt">
+          <mat-card-content>
+            <div class="row">
+              <mat-form-field style="width: 420px"><mat-label>HTTPS endpoint</mat-label><input matInput [(ngModel)]="newHook.url" placeholder="https://pms.example/webhooks/claim-bridge"></mat-form-field>
+              <button mat-flat-button (click)="createHook()" [disabled]="!newHook.url">Add webhook</button>
+            </div>
+            <div class="row">
+              @for (e of events; track e) { <mat-checkbox [checked]="newHook.events.has(e)" (change)="toggleEvent(e, $event.checked)">{{ e }}</mat-checkbox> }
+            </div>
+            <p class="muted">Deliveries are signed with HMAC-SHA256 over "timestamp.body" in the X-ClaimBridge-Signature header and retried with backoff.</p>
+          </mat-card-content>
+        </mat-card>
+      }
+      <table mat-table [dataSource]="webhooks()" class="mt">
+        <ng-container matColumnDef="url"><th mat-header-cell *matHeaderCellDef>URL</th><td mat-cell *matCellDef="let w">{{ w.url }}</td></ng-container>
+        <ng-container matColumnDef="events"><th mat-header-cell *matHeaderCellDef>Events</th><td mat-cell *matCellDef="let w">{{ w.events.join(', ') }}</td></ng-container>
+        <ng-container matColumnDef="status"><th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let w"><cb-status [status]="w.active ? 'Active' : 'Abandoned'" />
+            @if (w.disabledReason) { <span class="muted"> {{ w.disabledReason }}</span> }</td></ng-container>
+        <ng-container matColumnDef="actions"><th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let w">@if (!w.active && user.canManageOrg()) { <button mat-button (click)="enable(w)">Re-enable</button> }</td></ng-container>
+        <tr mat-header-row *matHeaderRowDef="hookColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: hookColumns"></tr>
+      </table>
+    </mat-tab>
+
+    <mat-tab label="Delivery log">
+      <table mat-table [dataSource]="deliveries()" class="mt">
+        <ng-container matColumnDef="event"><th mat-header-cell *matHeaderCellDef>Event</th><td mat-cell *matCellDef="let d">{{ d.eventType }}</td></ng-container>
+        <ng-container matColumnDef="status"><th mat-header-cell *matHeaderCellDef>Status</th><td mat-cell *matCellDef="let d"><cb-status [status]="d.status" /></td></ng-container>
+        <ng-container matColumnDef="attempts"><th mat-header-cell *matHeaderCellDef>Attempts</th><td mat-cell *matCellDef="let d">{{ d.attempts }}</td></ng-container>
+        <ng-container matColumnDef="last"><th mat-header-cell *matHeaderCellDef>Last result</th>
+          <td mat-cell *matCellDef="let d">{{ d.lastStatusCode ?? '' }} {{ d.lastError ?? '' }}</td></ng-container>
+        <ng-container matColumnDef="created"><th mat-header-cell *matHeaderCellDef>Created</th><td mat-cell *matCellDef="let d">{{ d.createdAt | date: 'short' }}</td></ng-container>
+        <ng-container matColumnDef="actions"><th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let d">@if (user.canManageOrg()) { <button mat-button (click)="redeliver(d)">Redeliver</button> }</td></ng-container>
+        <tr mat-header-row *matHeaderRowDef="deliveryColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: deliveryColumns"></tr>
+      </table>
+    </mat-tab>
+  </mat-tab-group>
+</div>
