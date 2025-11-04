@@ -4,6 +4,7 @@ import { roleGuard } from './core/auth/role.guard';
 export const routes: Routes = [
   { path: '', loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent) },
   { path: 'callback', loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent) },
+  { path: 'claims', loadComponent: () => import('./features/claims/claims-list.component').then(m => m.ClaimsListComponent) },
   {
     path: 'claims/new',
     canActivate: [roleGuard('Admin', 'ProviderAdmin', 'ProviderBiller')],
@@ -11,7 +12,6 @@ export const routes: Routes = [
   },
   { path: 'claims/:id/edit', loadComponent: () => import('./features/claims/claim-entry.component').then(m => m.ClaimEntryComponent) },
   { path: 'claims/:id/correct', loadComponent: () => import('./features/claims/claim-entry.component').then(m => m.ClaimEntryComponent) },
-  { path: 'claims', loadComponent: () => import('./features/claims/claims-list.component').then(m => m.ClaimsListComponent) },
   { path: 'claims/:id', loadComponent: () => import('./features/claims/claim-detail.component').then(m => m.ClaimDetailComponent) },
   { path: 'batches', loadComponent: () => import('./features/batches/batches.component').then(m => m.BatchesComponent) },
   { path: 'eligibility', loadComponent: () => import('./features/eligibility/eligibility.component').then(m => m.EligibilityComponent) },
@@ -23,6 +23,16 @@ export const routes: Routes = [
     path: 'integrations',
     canActivate: [roleGuard('Admin', 'OpsAnalyst', 'ProviderAdmin')],
     loadComponent: () => import('./features/integrations/integrations.component').then(m => m.IntegrationsComponent)
+  },
+  {
+    path: 'ops/payers',
+    canActivate: [roleGuard('Admin', 'OpsAnalyst')],
+    loadComponent: () => import('./features/ops/payer-health.component').then(m => m.PayerHealthComponent)
+  },
+  {
+    path: 'ops/reconciliation',
+    canActivate: [roleGuard('Admin', 'OpsAnalyst')],
+    loadComponent: () => import('./features/ops/reconciliation.component').then(m => m.ReconciliationComponent)
   },
   { path: '**', redirectTo: '' }
 ];
