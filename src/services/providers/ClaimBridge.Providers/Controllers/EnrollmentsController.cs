@@ -35,7 +35,7 @@ public class EnrollmentsController(ProvidersDb db, EnrollmentService enrollments
 
     [HttpPost]
     [Authorize(Policy = Policies.ProviderAdmin)]
-    public async Task<IActionResult> Request(RequestEnrollment request)
+    public async Task<IActionResult> Create(RequestEnrollment request)
     {
         var orgId = User.IsStaff() ? request.OrgId : User.OrgId();
         if (orgId is null) return Problem("orgId is required", statusCode: StatusCodes.Status400BadRequest);

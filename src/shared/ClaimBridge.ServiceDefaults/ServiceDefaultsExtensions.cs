@@ -24,7 +24,9 @@ public static class ServiceDefaultsExtensions
             .Enrich.WithProperty("service", serviceName)
             .Enrich.With<PhiRedactionEnricher>()
             .WriteTo.Console(outputTemplate:
-                "[{Timestamp:HH:mm:ss} {Level:u3}] {service} {SourceContext}: {Message:lj} {Properties:j}{NewLine}{Exception}"));
+                "[{Timestamp:HH:mm:ss} {Level:u3}] {service} {SourceContext} {TraceId}: {Message:lj} {Properties:j}{NewLine}{Exception}"));
+
+        builder.AddClaimBridgeTelemetry(serviceName);
 
         builder.Services.AddProblemDetails(o => o.CustomizeProblemDetails = ctx =>
         {

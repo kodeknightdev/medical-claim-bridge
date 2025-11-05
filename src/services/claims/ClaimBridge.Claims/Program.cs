@@ -66,6 +66,7 @@ builder.Services.AddHttpClient<RiskClient>(c =>
 builder.Services.AddScoped<ScrubberClient>();
 builder.Services.AddScoped<ClaimPhi>();
 builder.Services.AddScoped<ClaimTransitions>();
+builder.Services.AddSingleton<ClaimsMetrics>();
 builder.Services.AddScoped<ClaimIntakeService>();
 builder.Services.AddScoped<DuplicateDetector>();
 builder.Services.AddScoped<ClaimBridge.Claims.Api.IdempotencyFilter>();

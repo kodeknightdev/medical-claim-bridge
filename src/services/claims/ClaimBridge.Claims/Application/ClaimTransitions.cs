@@ -5,11 +5,12 @@ using ClaimBridge.ServiceDefaults.Messaging;
 namespace ClaimBridge.Claims.Application;
 
 /// <summary>Fires lifecycle triggers and stages the matching claims.status-changed event in the same transaction.</summary>
-public class ClaimTransitions(IEventOutbox outbox, ClaimReadModelProjector projector, TimeProvider clock)
+public class ClaimTransitions(IEventOutbox outbox, ClaimReadModelProjector projector, ClaimsMetrics metrics, TimeProvider clock)
 {
     public ClaimStatusEvent Fire(Claim claim, LifecycleTrigger trigger, string source, string? reason = null, string? detail = null)
     {
         var entry = claim.Fire(trigger, clock.GetUtcNow(), source, reason, detail);
+        metrics.Transitioned(entry.ToStatus);
         Publish(claim, entry);
         return entry;
     }

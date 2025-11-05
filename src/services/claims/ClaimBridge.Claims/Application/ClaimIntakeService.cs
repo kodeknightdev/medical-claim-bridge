@@ -23,6 +23,7 @@ public class ClaimIntakeService(
     DuplicateDetector duplicates,
     Denials.DenialWorklist worklist,
     IEventOutbox outbox,
+    ClaimsMetrics metrics,
     TimeProvider clock)
 {
     public async Task<IntakeOutcome> AcceptAsync(ClaimRequest request, Guid orgId, ClaimSource source, string actor,
@@ -89,6 +90,7 @@ public class ClaimIntakeService(
         await transitions.ProjectAsync(claim, ct);
 
         await db.SaveChangesAsync(ct);
+        metrics.Received(source, claim.PayerId);
         return new IntakeOutcome(claim, null);
     }
 

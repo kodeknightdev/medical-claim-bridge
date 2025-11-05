@@ -46,7 +46,7 @@ public sealed class PayerBFileProcessor(
         }
     }
 
-    private async Task ProcessAsync(BlobContainerClient container, string text, CancellationToken ct)
+    private Task ProcessAsync(BlobContainerClient container, string text, CancellationToken ct)
     {
         var interchange = X12Reader.Parse(text);
         var groupControl = interchange.Segments.First(s => s.Id == "GS")[6];
@@ -86,7 +86,7 @@ public sealed class PayerBFileProcessor(
         if (file277 is not null)
             scheduler.Schedule(flip ? delay : delay * 2, ct2 => Upload(container, $"outbound/BPK277CA_{groupControl}.x12", file277, ct2));
 
-        if (rejectFile || accepted.Count == 0) return;
+        if (rejectFile || accepted.Count == 0) return Task.CompletedTask;
         scheduler.Schedule(TimeSpan.FromSeconds(scenario.AdjudicationDelaySeconds) + delay * 2, async ct2 =>
         {
             foreach (var byPayee in accepted.GroupBy(r => (r.Claim.BillingNpi, r.Claim.BillingName)))
@@ -96,6 +96,7 @@ public sealed class PayerBFileProcessor(
             }
         });
         logger.LogInformation("Payer B took file {Group} with {Count} claim(s)", groupControl, claims.Count);
+        return Task.CompletedTask;
     }
 
     private static Task Upload(BlobContainerClient container, string name, string text, CancellationToken ct) =>
