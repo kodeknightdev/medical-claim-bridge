@@ -21,4 +21,7 @@
   <ItemGroup>
     <EmbeddedResource Include="CodeSets\*.json" LogicalName="CodeSets.%(Filename)%(Extension)" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="ClaimBridge.Scrubber.Tests" />
+  </ItemGroup>
 </Project>
