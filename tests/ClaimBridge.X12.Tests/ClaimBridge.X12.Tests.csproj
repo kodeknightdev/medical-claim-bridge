@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Verify.Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\shared\ClaimBridge.X12\ClaimBridge.X12.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\tools\samples\*.x12" Link="Samples\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

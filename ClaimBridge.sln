@@ -57,6 +57,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClaimBridge.Scrubber.Tests", "tests\ClaimBridge.Scrubber.Tests\ClaimBridge.Scrubber.Tests.csproj", "{FE82038B-1A48-4599-9261-0A3C905186DD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClaimBridge.X12.Tests", "tests\ClaimBridge.X12.Tests\ClaimBridge.X12.Tests.csproj", "{8F0391D1-FFCC-4B48-8F6D-BBA993D848DA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -235,6 +237,18 @@ Global
 		{FE82038B-1A48-4599-9261-0A3C905186DD}.Release|x64.Build.0 = Release|Any CPU
 		{FE82038B-1A48-4599-9261-0A3C905186DD}.Release|x86.ActiveCfg = Release|Any CPU
 		{FE82038B-1A48-4599-9261-0A3C905186DD}.Release|x86.Build.0 = Release|Any CPU
+		{8F0391D1-FFCC-4B48-8F6D-BBA993D848DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F0391D1-FFCC-4B48-8F6D-BBA993D848DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F0391D1-FFCC-4B48-8F6D-BBA993D848DA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8F0391D1-FFCC-4B48-8F6D-BBA993D848DA}.Debug|x64.Build.0 = Debug|Any CPU
+		{8F0391D1-FFCC-4B48-8F6D-BBA993D848DA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8F0391D1-FFCC-4B48-8F6D-BBA993D848DA}.Debug|x86.Build.0 = Debug|Any CPU
+		{8F0391D1-FFCC-4B48-8F6D-BBA993D848DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F0391D1-FFCC-4B48-8F6D-BBA993D848DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8F0391D1-FFCC-4B48-8F6D-BBA993D848DA}.Release|x64.ActiveCfg = Release|Any CPU
+		{8F0391D1-FFCC-4B48-8F6D-BBA993D848DA}.Release|x64.Build.0 = Release|Any CPU
+		{8F0391D1-FFCC-4B48-8F6D-BBA993D848DA}.Release|x86.ActiveCfg = Release|Any CPU
+		{8F0391D1-FFCC-4B48-8F6D-BBA993D848DA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -264,5 +278,6 @@ Global
 		{6306A8FB-679E-111F-6585-8F70E0EE6013} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{93347585-88E7-4183-B46E-DAF364E4D122} = {6306A8FB-679E-111F-6585-8F70E0EE6013}
 		{FE82038B-1A48-4599-9261-0A3C905186DD} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{8F0391D1-FFCC-4B48-8F6D-BBA993D848DA} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal
