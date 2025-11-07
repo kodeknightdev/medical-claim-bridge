@@ -69,6 +69,7 @@ public class LifecycleTimeoutJob(
         if (due.Count > 0) await db.SaveChangesAsync(ct);
 
         // idempotency keys only need to outlive client retries
-        await db.IdempotencyRecords.Where(r => r.CreatedAt < now.AddDays(-1)).ExecuteDeleteAsync(ct);
+        if (db.Database.IsRelational())
+            await db.IdempotencyRecords.Where(r => r.CreatedAt < now.AddDays(-1)).ExecuteDeleteAsync(ct);
     }
 }

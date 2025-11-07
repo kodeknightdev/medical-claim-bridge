@@ -2,7 +2,7 @@ namespace ClaimBridge.Claims.Application.Clients;
 
 public class StatusInquiryClient(HttpClient http, ILogger<StatusInquiryClient> logger)
 {
-    public async Task<bool> RequestAsync(Guid claimId, string claimNumber, string payerId, CancellationToken ct)
+    public virtual async Task<bool> RequestAsync(Guid claimId, string claimNumber, string payerId, CancellationToken ct)
     {
         try
         {
