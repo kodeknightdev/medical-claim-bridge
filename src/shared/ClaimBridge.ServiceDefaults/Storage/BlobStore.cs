@@ -93,7 +93,8 @@ public static class BlobStoreExtensions
 {
     public static IServiceCollection AddClaimBridgeBlobStorage(this IServiceCollection services, IConfiguration config)
     {
-        var cs = config.GetConnectionString("Blob") ?? "UseDevelopmentStorage=true";
+        var cs = config.GetConnectionString("Blob");
+        if (string.IsNullOrWhiteSpace(cs)) cs = "UseDevelopmentStorage=true";
         services.AddSingleton(new BlobServiceClient(cs));
         services.AddSingleton<IBlobStore, AzureBlobStore>();
         services.AddHealthChecks().AddAzureBlobStorage(name: "blob", tags: [ServiceDefaultsExtensions.ReadyTag]);
