@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\services\remittance\ClaimBridge.Remittance\ClaimBridge.Remittance.csproj" />
+    <ProjectReference Include="..\ClaimBridge.Testing\ClaimBridge.Testing.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\tools\samples\*.835.x12" Link="Samples\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
