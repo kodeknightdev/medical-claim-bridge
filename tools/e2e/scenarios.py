@@ -1,6 +1,6 @@
 """End-to-end scenarios against a running stack (docker compose or local). Synthetic data only.
 
-    python tools/e2e/scenarios.py --gateway http://localhost:5000 --sim http://localhost:5109 --receiver http://localhost:5190
+    python tools/e2e/scenarios.py --gateway http://localhost:5080 --sim http://localhost:5109 --receiver http://localhost:5190
 """
 from __future__ import annotations
 
@@ -180,7 +180,7 @@ SCENARIOS = [payer_a_paid_with_signed_webhook, idempotent_api_submission, scrub_
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("--gateway", default="http://localhost:5000")
+    p.add_argument("--gateway", default="http://localhost:5080")
     p.add_argument("--sim", default="http://localhost:5109")
     p.add_argument("--receiver", default="http://localhost:5190")
     p.add_argument("--client-secret", default="demo-sunrise-secret-change-me")

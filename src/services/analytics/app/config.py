@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     )
     payers_gateway_url: str = "http://localhost:5105/"
     payer_health_poll_seconds: int = 30
-    auth_issuer: str = "http://localhost:5000/"
+    auth_issuer: str = "http://localhost:5080/"
     auth_authority: str = "http://localhost:5101/"
     auth_audience: str = "claim-bridge-api"
     auth_disabled: bool = False

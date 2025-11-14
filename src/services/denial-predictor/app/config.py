@@ -15,7 +15,7 @@ class Settings(BaseSettings):
         "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;"
         "BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
     )
-    auth_issuer: str = "http://localhost:5000/"
+    auth_issuer: str = "http://localhost:5080/"
     auth_authority: str = "http://localhost:5101/"
     auth_audience: str = "claim-bridge-api"
     auth_disabled: bool = False

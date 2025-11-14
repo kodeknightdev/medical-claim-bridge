@@ -27,7 +27,7 @@ public static class AuthExtensions
     public static WebApplicationBuilder AddClaimBridgeAuth(this WebApplicationBuilder builder)
     {
         var section = builder.Configuration.GetSection("Auth");
-        var issuer = section["Issuer"] ?? "http://localhost:5000/";
+        var issuer = section["Issuer"] ?? "http://localhost:5080/";
         var authority = section["Authority"] ?? issuer;
         var audience = section["Audience"] ?? Scopes.Audience;
 
