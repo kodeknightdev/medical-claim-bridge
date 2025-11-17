@@ -1,0 +1,35 @@
+# Developer conveniences: host ports for every service and the dependencies, so you can run one service
+# from the IDE against the rest of the stack. Not used by CI.
+services:
+  sqlserver:
+    ports: ["1433:1433"]
+  kafka:
+    ports: ["9094:9094"]
+  redis:
+    ports: ["6379:6379"]
+  azurite:
+    ports: ["10000:10000"]
+  mailhog:
+    ports: ["1025:1025"]
+  jaeger:
+    ports: ["4317:4317", "4318:4318", "16686:16686"]
+  identity:
+    ports: ["5101:8080"]
+  providers:
+    ports: ["5102:8080"]
+  claims:
+    ports: ["5103:8080"]
+  scrubber:
+    ports: ["5104:8080", "5114:8081"]
+  payers-gateway:
+    ports: ["5105:8080"]
+  remittance:
+    ports: ["5106:8080"]
+  notifications:
+    ports: ["5107:8080"]
+  denial-predictor:
+    ports: ["5108:8000"]
+  payer-sim:
+    ports: ["5109:8080"]
+  analytics:
+    ports: ["5110:8000"]

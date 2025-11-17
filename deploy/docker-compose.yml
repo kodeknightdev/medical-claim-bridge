@@ -1,0 +1,335 @@
+# Local stack for claim-bridge. Synthetic data only. Run from the repository root:
+#   cp .env.example .env && docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.override.yml up --build
+name: claim-bridge
+
+x-dotnet: &dotnet
+  restart: unless-stopped
+  depends_on:
+    sqlserver-init: { condition: service_completed_successfully }
+    kafka-init: { condition: service_completed_successfully }
+    redis: { condition: service_started }
+    azurite: { condition: service_started }
+
+services:
+  # ---- infrastructure ----
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-CU17-ubuntu-22.04
+    platform: linux/amd64
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+      MSSQL_PID: Developer
+    volumes:
+      - sqldata:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  sqlserver-init:
+    image: mcr.microsoft.com/mssql/server:2022-CU17-ubuntu-22.04
+    platform: linux/amd64
+    entrypoint: ["/bin/bash", "/init/init.sh"]
+    environment:
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+      SERVICE_DB_PASSWORD: ${SERVICE_DB_PASSWORD}
+    volumes:
+      - ./sqlserver/init.sh:/init/init.sh:ro
+    depends_on:
+      sqlserver: { condition: service_healthy }
+
+  kafka:
+    image: apache/kafka:3.9.0
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: INTERNAL://:9092,EXTERNAL://:9094,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    volumes:
+      - kafkadata:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+
+  kafka-init:
+    image: apache/kafka:3.9.0
+    entrypoint: ["/bin/bash", "/init/create-topics.sh"]
+    environment:
+      KAFKA_BOOTSTRAP: kafka:9092
+    volumes:
+      - ./kafka/create-topics.sh:/init/create-topics.sh:ro
+    depends_on:
+      kafka: { condition: service_healthy }
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    environment:
+      KAFKA_CLUSTERS_0_NAME: claim-bridge
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    ports: ["8085:8080"]
+    depends_on: [kafka]
+
+  redis:
+    image: redis:7.4.2-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:3.34.0
+    command: ["azurite-blob", "--blobHost", "0.0.0.0", "--skipApiVersionCheck", "--loose"]
+    volumes:
+      - azuritedata:/data
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    ports: ["8025:8025"]
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.66.0
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports: ["16686:16686"]
+
+  # ---- services ----
+  identity:
+    <<: *dotnet
+    build: { context: .., dockerfile: src/services/identity/Dockerfile }
+    image: claim-bridge/identity:local
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      Auth__Issuer: http://localhost:5080/
+      Auth__Authority: http://identity:8080/
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      Kafka__BootstrapServers: kafka:9092
+      ConnectionStrings__Redis: redis:6379
+      ConnectionStrings__Blob: ${AZURITE_CONNECTION_STRING}
+      Phi__Key: ${PHI_ENCRYPTION_KEY}
+      Seed__Enabled: "true"
+      ConnectionStrings__IdentityDb: Server=sqlserver,1433;Database=cb_identity;User Id=identity_svc;Password=${SERVICE_DB_PASSWORD};TrustServerCertificate=True
+      Auth__PortalRedirectUris__0: http://localhost:4200/callback
+      Auth__PortalPostLogoutUris__0: http://localhost:4200/
+      Seed__DemoPassword: ${SEED_DEMO_PASSWORD}
+      Seed__DemoClientSecret: ${DEMO_CLIENT_SECRET}
+
+  providers:
+    <<: *dotnet
+    build: { context: .., dockerfile: src/services/providers/Dockerfile }
+    image: claim-bridge/providers:local
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      Auth__Issuer: http://localhost:5080/
+      Auth__Authority: http://identity:8080/
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      Kafka__BootstrapServers: kafka:9092
+      ConnectionStrings__Redis: redis:6379
+      ConnectionStrings__Blob: ${AZURITE_CONNECTION_STRING}
+      Phi__Key: ${PHI_ENCRYPTION_KEY}
+      Seed__Enabled: "true"
+      ConnectionStrings__ProvidersDb: Server=sqlserver,1433;Database=cb_providers;User Id=providers_svc;Password=${SERVICE_DB_PASSWORD};TrustServerCertificate=True
+      Seed__WebhookSecret: ${DEMO_WEBHOOK_SECRET}
+      Seed__WebhookUrl: http://webhook-receiver:8080/webhooks/sunrise
+
+  scrubber:
+    <<: *dotnet
+    build: { context: .., dockerfile: src/services/scrubber/Dockerfile }
+    image: claim-bridge/scrubber:local
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      Auth__Issuer: http://localhost:5080/
+      Auth__Authority: http://identity:8080/
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      Kafka__BootstrapServers: kafka:9092
+      ConnectionStrings__Redis: redis:6379
+      ConnectionStrings__Blob: ${AZURITE_CONNECTION_STRING}
+      Phi__Key: ${PHI_ENCRYPTION_KEY}
+      Seed__Enabled: "true"
+      ConnectionStrings__ScrubberDb: Server=sqlserver,1433;Database=cb_scrubber;User Id=scrubber_svc;Password=${SERVICE_DB_PASSWORD};TrustServerCertificate=True
+
+  claims:
+    <<: *dotnet
+    build: { context: .., dockerfile: src/services/claims/Dockerfile }
+    image: claim-bridge/claims:local
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      Auth__Issuer: http://localhost:5080/
+      Auth__Authority: http://identity:8080/
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      Kafka__BootstrapServers: kafka:9092
+      ConnectionStrings__Redis: redis:6379
+      ConnectionStrings__Blob: ${AZURITE_CONNECTION_STRING}
+      Phi__Key: ${PHI_ENCRYPTION_KEY}
+      Seed__Enabled: "true"
+      ConnectionStrings__ClaimsDb: Server=sqlserver,1433;Database=cb_claims;User Id=claims_svc;Password=${SERVICE_DB_PASSWORD};TrustServerCertificate=True
+      Services__ScrubberGrpc: http://scrubber:8081
+      Services__Providers: http://providers:8080/
+      Services__PayersGateway: http://payers-gateway:8080/
+      Services__DenialPredictor: http://denial-predictor:8000/
+
+  payers-gateway:
+    <<: *dotnet
+    build: { context: .., dockerfile: src/services/payers-gateway/Dockerfile }
+    image: claim-bridge/payers-gateway:local
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      Auth__Issuer: http://localhost:5080/
+      Auth__Authority: http://identity:8080/
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      Kafka__BootstrapServers: kafka:9092
+      ConnectionStrings__Redis: redis:6379
+      ConnectionStrings__Blob: ${AZURITE_CONNECTION_STRING}
+      Phi__Key: ${PHI_ENCRYPTION_KEY}
+      Seed__Enabled: "true"
+      ConnectionStrings__PayersDb: Server=sqlserver,1433;Database=cb_payers;User Id=payers_svc;Password=${SERVICE_DB_PASSWORD};TrustServerCertificate=True
+      Services__Claims: http://claims:8080/
+      Payers__PAYER-A__BaseUrl: http://payer-sim:8080/
+      Payers__PAYER-A__CallbackUrl: http://payers-gateway:8080/api/payers/payer-a/callbacks/adjudication
+      Payers__PAYER-A__CallbackToken: ${PAYER_A_CALLBACK_TOKEN}
+      Payers__PAYER-B__BaseUrl: http://payer-sim:8080/
+      Payers__PAYER-C__BaseUrl: http://payer-sim:8080/
+
+  remittance:
+    <<: *dotnet
+    build: { context: .., dockerfile: src/services/remittance/Dockerfile }
+    image: claim-bridge/remittance:local
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      Auth__Issuer: http://localhost:5080/
+      Auth__Authority: http://identity:8080/
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      Kafka__BootstrapServers: kafka:9092
+      ConnectionStrings__Redis: redis:6379
+      ConnectionStrings__Blob: ${AZURITE_CONNECTION_STRING}
+      Phi__Key: ${PHI_ENCRYPTION_KEY}
+      Seed__Enabled: "true"
+      ConnectionStrings__RemittanceDb: Server=sqlserver,1433;Database=cb_remittance;User Id=remittance_svc;Password=${SERVICE_DB_PASSWORD};TrustServerCertificate=True
+
+  notifications:
+    <<: *dotnet
+    build: { context: .., dockerfile: src/services/notifications/Dockerfile }
+    image: claim-bridge/notifications:local
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      Auth__Issuer: http://localhost:5080/
+      Auth__Authority: http://identity:8080/
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      Kafka__BootstrapServers: kafka:9092
+      ConnectionStrings__Redis: redis:6379
+      ConnectionStrings__Blob: ${AZURITE_CONNECTION_STRING}
+      Phi__Key: ${PHI_ENCRYPTION_KEY}
+      Seed__Enabled: "true"
+      ConnectionStrings__NotificationsDb: Server=sqlserver,1433;Database=cb_notifications;User Id=notifications_svc;Password=${SERVICE_DB_PASSWORD};TrustServerCertificate=True
+      Services__Providers: http://providers:8080/
+      Smtp__Host: mailhog
+      Smtp__Port: "1025"
+
+  denial-predictor:
+    build: { context: ../src/services/denial-predictor }
+    image: claim-bridge/denial-predictor:local
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mssql+pyodbc://denial_predictor_svc:${SERVICE_DB_PASSWORD}@sqlserver:1433/cb_denial_predictor?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes
+      MODEL_DIR: /app/models
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      BLOB_CONNECTION_STRING: ${AZURITE_CONNECTION_STRING}
+      AUTH_ISSUER: http://localhost:5080/
+      AUTH_AUTHORITY: http://identity:8080/
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+    volumes:
+      - models:/app/models
+    depends_on:
+      sqlserver-init: { condition: service_completed_successfully }
+      kafka-init: { condition: service_completed_successfully }
+
+  analytics:
+    build: { context: ../src/services/analytics }
+    image: claim-bridge/analytics:local
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mssql+pyodbc://analytics_svc:${SERVICE_DB_PASSWORD}@sqlserver:1433/cb_analytics?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      BLOB_CONNECTION_STRING: ${AZURITE_CONNECTION_STRING}
+      PAYERS_GATEWAY_URL: http://payers-gateway:8080/
+      AUTH_ISSUER: http://localhost:5080/
+      AUTH_AUTHORITY: http://identity:8080/
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+    depends_on:
+      sqlserver-init: { condition: service_completed_successfully }
+      kafka-init: { condition: service_completed_successfully }
+
+  gateway:
+    build: { context: .., dockerfile: src/gateway/Dockerfile }
+    image: claim-bridge/gateway:local
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      Auth__Issuer: http://localhost:5080/
+      Auth__Authority: http://identity:8080/
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+      Cors__Origins__0: http://localhost:4200
+      ReverseProxy__Clusters__identity__Destinations__primary__Address: http://identity:8080/
+      ReverseProxy__Clusters__providers__Destinations__primary__Address: http://providers:8080/
+      ReverseProxy__Clusters__claims__Destinations__primary__Address: http://claims:8080/
+      ReverseProxy__Clusters__scrubber__Destinations__primary__Address: http://scrubber:8080/
+      ReverseProxy__Clusters__payers-gateway__Destinations__primary__Address: http://payers-gateway:8080/
+      ReverseProxy__Clusters__remittance__Destinations__primary__Address: http://remittance:8080/
+      ReverseProxy__Clusters__notifications__Destinations__primary__Address: http://notifications:8080/
+      ReverseProxy__Clusters__denial-predictor__Destinations__primary__Address: http://denial-predictor:8000/
+      ReverseProxy__Clusters__analytics__Destinations__primary__Address: http://analytics:8000/
+    ports: ["5080:8080"]
+    depends_on: [identity, providers, claims, scrubber, payers-gateway, remittance, notifications, denial-predictor, analytics]
+
+  portal:
+    build: { context: ../angular-frontend }
+    image: claim-bridge/portal:local
+    restart: unless-stopped
+    ports: ["4200:8080"]
+    depends_on: [gateway]
+
+  # ---- dev and test tools ----
+  payer-sim:
+    build: { context: .., dockerfile: tools/payer-sim/Dockerfile }
+    image: claim-bridge/payer-sim:local
+    restart: unless-stopped
+    environment:
+      ConnectionStrings__Blob: ${AZURITE_CONNECTION_STRING}
+      Sim__NorthwindCallbackUrl: http://payers-gateway:8080/api/payers/payer-a/callbacks/adjudication
+      Sim__NorthwindCallbackToken: ${PAYER_A_CALLBACK_TOKEN}
+    depends_on: [azurite]
+
+  webhook-receiver:
+    build: { context: .., dockerfile: tools/webhook-receiver/Dockerfile }
+    image: claim-bridge/webhook-receiver:local
+    restart: unless-stopped
+    environment:
+      Receiver__Secrets__sunrise: ${DEMO_WEBHOOK_SECRET}
+    ports: ["5190:8080"]
+
+  seed:
+    build: { context: ../tools/seed }
+    image: claim-bridge/seed:local
+    restart: "no"
+    environment:
+      BLOB_CONNECTION_STRING: ${AZURITE_CONNECTION_STRING}
+      CLAIMS_URL: http://claims:8080
+      REMITTANCE_URL: http://remittance:8080
+      ANALYTICS_URL: http://analytics:8000
+      DENIAL_PREDICTOR_URL: http://denial-predictor:8000
+    depends_on: [claims, remittance, analytics, denial-predictor, payer-sim]
+
+volumes:
+  sqldata:
+  kafkadata:
+  azuritedata:
+  models:
