@@ -2,11 +2,14 @@ using ClaimBridge.Identity.Auth;
 using ClaimBridge.Identity.Data;
 using ClaimBridge.Identity.Seeding;
 using ClaimBridge.ServiceDefaults;
+using System.Security.Cryptography.X509Certificates;
 using ClaimBridge.ServiceDefaults.Data;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Validation.AspNetCore;
+using StackExchange.Redis;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 using CbScopes = ClaimBridge.Contracts.Reference.Scopes;
 
@@ -39,6 +42,15 @@ builder.Services.ConfigureApplicationCookie(o =>
     o.ExpireTimeSpan = TimeSpan.FromHours(8);
 });
 
+// login cookies and antiforgery tokens have to be readable by every replica
+if (builder.Configuration.GetConnectionString("Redis") is { Length: > 0 } redis)
+{
+    var multiplexer = new Lazy<IConnectionMultiplexer>(() => ConnectionMultiplexer.Connect(redis));
+    builder.Services.AddDataProtection()
+        .SetApplicationName("claim-bridge-identity")
+        .PersistKeysToStackExchangeRedis(() => multiplexer.Value.GetDatabase(), "identity:data-protection-keys");
+}
+
 var issuer = builder.Configuration["Auth:Issuer"];
 builder.Services.AddOpenIddict()
     .AddCore(o => o.UseEntityFrameworkCore().UseDbContext<IdentityDb>())
@@ -64,8 +76,22 @@ builder.Services.AddOpenIddict()
         if (!string.IsNullOrWhiteSpace(issuer))
             o.SetIssuer(new Uri(issuer));
 
-        // TODO: load keys from Key Vault outside of dev, ephemeral keys reset on every restart
-        o.AddEphemeralEncryptionKey().AddEphemeralSigningKey();
+        var keys = builder.Configuration.GetSection("Auth:Keys");
+        if (!string.IsNullOrWhiteSpace(keys["SigningCertificatePath"]))
+        {
+            // every replica must sign with the same key or tokens fail validation half the time
+            o.AddSigningCertificate(X509CertificateLoader.LoadPkcs12FromFile(keys["SigningCertificatePath"]!, keys["CertificatePassword"]));
+            o.AddEncryptionCertificate(X509CertificateLoader.LoadPkcs12FromFile(keys["EncryptionCertificatePath"]!, keys["CertificatePassword"]));
+        }
+        else if (builder.Environment.IsDevelopment())
+        {
+            // single instance only: tokens issued before a restart stop validating
+            o.AddEphemeralEncryptionKey().AddEphemeralSigningKey();
+        }
+        else
+        {
+            throw new InvalidOperationException("Auth:Keys:SigningCertificatePath and EncryptionCertificatePath are required outside Development.");
+        }
         // resource services validate plain signed JWTs against our JWKS
         o.DisableAccessTokenEncryption();
 

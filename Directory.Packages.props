@@ -31,6 +31,7 @@
   </ItemGroup>
   <ItemGroup Label="Caching">
     <PackageVersion Include="Microsoft.Extensions.Caching.Hybrid" Version="9.7.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="9.0.8" />
     <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.8" />
   </ItemGroup>
   <ItemGroup Label="Health">
