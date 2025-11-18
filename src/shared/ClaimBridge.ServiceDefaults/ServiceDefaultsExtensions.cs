@@ -2,6 +2,7 @@ using ClaimBridge.ServiceDefaults.Logging;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
@@ -54,8 +55,11 @@ public static class ServiceDefaultsExtensions
         app.MapHealthChecks("/alive", new HealthCheckOptions { Predicate = r => r.Tags.Contains(LiveTag) })
             .AllowAnonymous();
 
-        app.MapOpenApi().AllowAnonymous();
-        app.MapScalarApiReference(o => o.WithTitle(app.Environment.ApplicationName)).AllowAnonymous();
+        if (app.Environment.IsDevelopmentLike() || app.Configuration.GetValue("OpenApi:Expose", false))
+        {
+            app.MapOpenApi().AllowAnonymous();
+            app.MapScalarApiReference(o => o.WithTitle(app.Environment.ApplicationName)).AllowAnonymous();
+        }
         return app;
     }
 
