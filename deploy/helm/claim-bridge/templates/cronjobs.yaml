@@ -1,0 +1,41 @@
+{{- range $job, $cfg := dict "model-retraining" .Values.cronJobs.modelRetraining "ar-snapshot" .Values.cronJobs.arSnapshot }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ $.Release.Name }}-{{ $job }}
+  labels:
+    app.kubernetes.io/part-of: claim-bridge
+    app.kubernetes.io/name: {{ $job }}
+spec:
+  schedule: {{ $cfg.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/part-of: claim-bridge
+            app.kubernetes.io/name: {{ $job }}
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 100
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: trigger
+              image: {{ $.Values.cronJobs.image }}
+              args: ["-fsS", "--max-time", "900", "-X", "POST", {{ $cfg.target | replace "claim-bridge-" (printf "%s-" $.Release.Name) | quote }}]
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: [ALL] }
+              resources:
+                requests: { cpu: 10m, memory: 16Mi }
+                limits: { cpu: 100m, memory: 64Mi }
+{{- end }}

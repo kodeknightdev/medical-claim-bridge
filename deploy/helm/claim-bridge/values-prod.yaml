@@ -1,0 +1,10 @@
+global:
+  imageTag: "1.0.0"
+  environment: Production
+  publicIssuer: https://claims.example.org/
+  existingSecret: claim-bridge-secrets
+ingress:
+  host: claims.example.org
+services:
+  payer-sim: { enabled: false }
+  claims: { hpa: { enabled: true, minReplicas: 3, maxReplicas: 12, cpu: 65 } }

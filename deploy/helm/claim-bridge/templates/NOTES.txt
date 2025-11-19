@@ -1,0 +1,11 @@
+claim-bridge {{ .Chart.AppVersion }} installed as {{ .Release.Name }}.
+
+Portal: https://{{ .Values.ingress.host }}/
+{{- if (index .Values.services "payer-sim").enabled }}
+Payer simulator is running (dev only).
+{{- else }}
+Payer endpoints point at real payer URLs from values; the simulator is not deployed.
+{{- end }}
+{{- if not .Values.global.existingSecret }}
+WARNING: using the placeholder secret {{ include "cb.secretName" . }}; replace REPLACE_ME values before use.
+{{- end }}

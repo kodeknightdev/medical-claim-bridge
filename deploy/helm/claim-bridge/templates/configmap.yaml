@@ -1,0 +1,36 @@
+{{- range $name, $svc := .Values.services }}
+{{- if and (eq (include "cb.enabled" $svc) "true") (not $svc.static) }}
+{{- $ctx := dict "name" $name "root" $ }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cb.fullname" (dict "Release" $.Release "name" $name) }}
+  labels: {{- include "cb.labels" $ctx | nindent 4 }}
+data:
+  {{- if $svc.python }}
+  AUTH_ISSUER: {{ $.Values.global.publicIssuer | quote }}
+  AUTH_AUTHORITY: {{ printf "http://%s-identity:8080/" $.Release.Name | quote }}
+  KAFKA_BOOTSTRAP_SERVERS: {{ $.Values.config.kafkaBootstrap | quote }}
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ $.Values.global.otlpEndpoint | quote }}
+  MODEL_DIR: /app/models
+  {{- else }}
+  ASPNETCORE_ENVIRONMENT: {{ $.Values.global.environment | quote }}
+  Auth__Issuer: {{ $.Values.global.publicIssuer | quote }}
+  Auth__Authority: {{ printf "http://%s-identity:8080/" $.Release.Name | quote }}
+  Kafka__BootstrapServers: {{ $.Values.config.kafkaBootstrap | quote }}
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ $.Values.global.otlpEndpoint | quote }}
+  {{- end }}
+  {{- if eq $name "gateway" }}
+  {{- range $target, $t := $.Values.services }}
+  {{- if and (not $t.static) (ne $target "gateway") }}
+  ReverseProxy__Clusters__{{ $target }}__Destinations__primary__Address: {{ printf "http://%s-%s:%v/" $.Release.Name $target $t.port | quote }}
+  {{- end }}
+  {{- end }}
+  Cors__Origins__0: {{ printf "https://%s" $.Values.ingress.host | quote }}
+  {{- end }}
+  {{- range $k, $v := $svc.env }}
+  {{ $k }}: {{ $v | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}

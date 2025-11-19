@@ -1,0 +1,145 @@
+# Shared defaults. values-dev.yaml / values-prod.yaml layer environment specifics on top.
+global:
+  imageRegistry: claimbridgeacr.azurecr.io
+  imageTag: "1.0.0"
+  imagePullPolicy: IfNotPresent
+  publicIssuer: https://claims.example.org/
+  environment: Production
+  otlpEndpoint: http://otel-collector.observability:4317
+  # names of pre-created secrets (Key Vault CSI or sealed secrets); the chart never holds real values
+  existingSecret: ""
+
+ingress:
+  enabled: true
+  className: nginx
+  host: claims.example.org
+  tls:
+    enabled: true
+    secretName: claim-bridge-tls
+
+networkPolicies:
+  enabled: true
+  ingressControllerNamespace: ingress-nginx
+
+# Connection settings rendered into each service's ConfigMap; secret values come from the Secret.
+config:
+  kafkaBootstrap: kafka.example.servicebus.windows.net:9093
+  redisHost: claim-bridge.redis.cache.windows.net:6380,ssl=true
+  sqlServer: sql-claim-bridge.database.windows.net
+
+services:
+  identity:
+    image: identity
+    port: 8080
+    replicas: 2
+    database: cb_identity
+    # secret holding signing.pfx, encryption.pfx and password; required when replicas > 1 or outside Development
+    tokenKeysSecret: claim-bridge-identity-keys
+    resources: { requests: { cpu: 100m, memory: 192Mi }, limits: { cpu: "1", memory: 512Mi } }
+    env:
+      Auth__PortalRedirectUris__0: https://claims.example.org/callback
+      Auth__PortalPostLogoutUris__0: https://claims.example.org/
+  providers:
+    image: providers
+    port: 8080
+    replicas: 2
+    database: cb_providers
+    resources: { requests: { cpu: 100m, memory: 192Mi }, limits: { cpu: "1", memory: 512Mi } }
+  claims:
+    image: claims
+    port: 8080
+    replicas: 2
+    database: cb_claims
+    hpa: { enabled: true, minReplicas: 2, maxReplicas: 8, cpu: 70 }
+    resources: { requests: { cpu: 200m, memory: 256Mi }, limits: { cpu: "2", memory: 768Mi } }
+    env:
+      Services__ScrubberGrpc: http://claim-bridge-scrubber:8081
+      Services__Providers: http://claim-bridge-providers:8080/
+      Services__PayersGateway: http://claim-bridge-payers-gateway:8080/
+      Services__DenialPredictor: http://claim-bridge-denial-predictor:8000/
+  scrubber:
+    image: scrubber
+    port: 8080
+    grpcPort: 8081
+    replicas: 2
+    database: cb_scrubber
+    hpa: { enabled: true, minReplicas: 2, maxReplicas: 6, cpu: 70 }
+    resources: { requests: { cpu: 200m, memory: 256Mi }, limits: { cpu: "2", memory: 512Mi } }
+  payers-gateway:
+    image: payers-gateway
+    port: 8080
+    replicas: 2
+    database: cb_payers
+    externalEgress: true
+    resources: { requests: { cpu: 200m, memory: 256Mi }, limits: { cpu: "2", memory: 768Mi } }
+    env:
+      Services__Claims: http://claim-bridge-claims:8080/
+      Payers__PAYER-A__BaseUrl: https://api.northwind.example/
+      Payers__PAYER-A__CallbackUrl: https://claims.example.org/api/payers/payer-a/callbacks/adjudication
+      Payers__PAYER-B__BaseUrl: https://edi.bluepeak.example/
+      Payers__PAYER-C__BaseUrl: https://claims.cascade.example/
+  remittance:
+    image: remittance
+    port: 8080
+    replicas: 2
+    database: cb_remittance
+    resources: { requests: { cpu: 100m, memory: 256Mi }, limits: { cpu: "1", memory: 768Mi } }
+  notifications:
+    image: notifications
+    port: 8080
+    replicas: 2
+    database: cb_notifications
+    externalEgress: true
+    hpa: { enabled: true, minReplicas: 2, maxReplicas: 6, cpu: 70 }
+    resources: { requests: { cpu: 100m, memory: 192Mi }, limits: { cpu: "1", memory: 512Mi } }
+    env:
+      Services__Providers: http://claim-bridge-providers:8080/
+      Smtp__Host: smtp.example.org
+      Smtp__Port: "587"
+  denial-predictor:
+    image: denial-predictor
+    port: 8000
+    replicas: 1
+    python: true
+    database: cb_denial_predictor
+    # trained model files must survive restarts; one replica because the volume is ReadWriteOnce
+    modelStorage: { size: 2Gi, storageClass: "" }
+    resources: { requests: { cpu: 250m, memory: 512Mi }, limits: { cpu: "2", memory: 1536Mi } }
+  analytics:
+    image: analytics
+    port: 8000
+    replicas: 1
+    python: true
+    database: cb_analytics
+    resources: { requests: { cpu: 200m, memory: 512Mi }, limits: { cpu: "1", memory: 1Gi } }
+    env:
+      PAYERS_GATEWAY_URL: http://claim-bridge-payers-gateway:8080/
+  gateway:
+    image: gateway
+    port: 8080
+    replicas: 2
+    ingress: true
+    resources: { requests: { cpu: 200m, memory: 192Mi }, limits: { cpu: "2", memory: 512Mi } }
+  portal:
+    image: portal
+    port: 8080
+    replicas: 2
+    static: true
+    ingress: true
+    resources: { requests: { cpu: 50m, memory: 32Mi }, limits: { cpu: 250m, memory: 128Mi } }
+  payer-sim:
+    enabled: false
+    image: payer-sim
+    port: 8080
+    replicas: 1
+    static: true
+    resources: { requests: { cpu: 50m, memory: 128Mi }, limits: { cpu: 500m, memory: 256Mi } }
+
+cronJobs:
+  modelRetraining:
+    schedule: "0 3 * * 0"
+    target: http://claim-bridge-denial-predictor:8000/internal/train
+  arSnapshot:
+    schedule: "15 2 * * *"
+    target: http://claim-bridge-remittance:8080/internal/jobs/ar-snapshot
+  image: curlimages/curl:8.12.1

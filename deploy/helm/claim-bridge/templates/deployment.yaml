@@ -1,0 +1,126 @@
+{{- range $name, $svc := .Values.services }}
+{{- if eq (include "cb.enabled" $svc) "true" }}
+{{- $ctx := dict "name" $name "root" $ }}
+{{- $full := include "cb.fullname" (dict "Release" $.Release "name" $name) }}
+{{- $secret := include "cb.secretName" $ }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $full }}
+  labels: {{- include "cb.labels" $ctx | nindent 4 }}
+    {{- if $svc.externalEgress }}
+    claim-bridge/egress: external
+    {{- end }}
+spec:
+  {{- if not (and $svc.hpa $svc.hpa.enabled) }}
+  replicas: {{ $svc.replicas }}
+  {{- end }}
+  revisionHistoryLimit: 3
+  {{- if $svc.modelStorage }}
+  strategy: { type: Recreate }
+  {{- end }}
+  selector:
+    matchLabels: {{- include "cb.selector" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "cb.selector" $ctx | nindent 8 }}
+        {{- if $svc.externalEgress }}
+        claim-bridge/egress: external
+        {{- end }}
+        {{- if $svc.ingress }}
+        claim-bridge/ingress: public
+        {{- end }}
+      annotations:
+        {{- if not $svc.static }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $ | sha256sum }}
+        {{- end }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: {{ $name }}
+          image: {{ include "cb.image" (dict "root" $ "svc" $svc) }}
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+          ports:
+            - { name: http, containerPort: {{ $svc.port }} }
+            {{- if $svc.grpcPort }}
+            - { name: grpc, containerPort: {{ $svc.grpcPort }} }
+            {{- end }}
+          {{- if not $svc.static }}
+          envFrom:
+            - configMapRef:
+                name: {{ $full }}
+          env:
+            {{- if $svc.python }}
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: {{ $name }}-database-url } }
+            - name: BLOB_CONNECTION_STRING
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: blob-connection-string } }
+            {{- else }}
+            {{- if $svc.database }}
+            - name: ConnectionStrings__{{ $name | replace "-" "" | title | replace "Payersgateway" "Payers" }}Db
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: {{ $name }}-connection-string } }
+            {{- end }}
+            - name: ConnectionStrings__Redis
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: redis-connection-string } }
+            - name: ConnectionStrings__Blob
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: blob-connection-string } }
+            - name: Phi__Key
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: phi-key } }
+            {{- if $svc.tokenKeysSecret }}
+            - { name: Auth__Keys__SigningCertificatePath, value: /keys/signing.pfx }
+            - { name: Auth__Keys__EncryptionCertificatePath, value: /keys/encryption.pfx }
+            - name: Auth__Keys__CertificatePassword
+              valueFrom: { secretKeyRef: { name: {{ $svc.tokenKeysSecret }}, key: password } }
+            {{- end }}
+            {{- if eq $name "payers-gateway" }}
+            - name: Payers__PAYER-A__CallbackToken
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: payer-a-callback-token } }
+            {{- end }}
+            {{- end }}
+          {{- end }}
+          readinessProbe:
+            httpGet: { path: {{ if $svc.static }}/{{ else }}/health{{ end }}, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            httpGet: { path: {{ if $svc.static }}/{{ else }}/alive{{ end }}, port: http }
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources: {{- toYaml $svc.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: {{ not $svc.static }}
+            capabilities: { drop: [ALL] }
+          {{- if or $svc.python (not $svc.static) }}
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+            {{- if $svc.python }}
+            - { name: models, mountPath: /app/models }
+            {{- end }}
+            {{- if $svc.tokenKeysSecret }}
+            - { name: token-keys, mountPath: /keys, readOnly: true }
+            {{- end }}
+          {{- end }}
+      {{- if or $svc.python (not $svc.static) }}
+      volumes:
+        - { name: tmp, emptyDir: {} }
+        {{- if $svc.tokenKeysSecret }}
+        - name: token-keys
+          secret:
+            secretName: {{ $svc.tokenKeysSecret }}
+            items: [{ key: signing.pfx, path: signing.pfx }, { key: encryption.pfx, path: encryption.pfx }]
+        {{- end }}
+        {{- if $svc.modelStorage }}
+        - name: models
+          persistentVolumeClaim: { claimName: {{ $full }}-models }
+        {{- else if $svc.python }}
+        - { name: models, emptyDir: {} }
+        {{- end }}
+      {{- end }}
+{{- end }}
+{{- end }}

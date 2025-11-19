@@ -1,0 +1,82 @@
+{{- if .Values.networkPolicies.enabled }}
+# Default deny for everything in the release; then open exactly what is needed.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-default-deny
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/part-of: claim-bridge }
+  policyTypes: [Ingress, Egress]
+---
+# Only the gateway and the portal accept traffic from outside the namespace (the ingress controller).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-public-ingress
+spec:
+  podSelector:
+    matchLabels: { claim-bridge/ingress: public }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: {{ .Values.networkPolicies.ingressControllerNamespace }} }
+---
+# Services talk to each other inside the namespace (internal APIs, gRPC, /internal endpoints).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-in-namespace
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/part-of: claim-bridge }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector: {}
+  egress:
+    - to:
+        - podSelector: {}
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels: { k8s-app: kube-dns }
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+---
+# Azure PaaS endpoints (SQL, Event Hubs, Redis, Storage, Key Vault) over TLS and SQL ports for every service.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-azure-paas
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/part-of: claim-bridge }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - ipBlock: { cidr: 0.0.0.0/0, except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16] }
+      ports:
+        - { protocol: TCP, port: 1433 }
+        - { protocol: TCP, port: 6380 }
+        - { protocol: TCP, port: 9093 }
+---
+# Only notifications (webhooks, SMTP) and payers-gateway (payer APIs and SFTP) may reach arbitrary HTTPS hosts.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-external-egress
+spec:
+  podSelector:
+    matchLabels: { claim-bridge/egress: external }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - ipBlock: { cidr: 0.0.0.0/0, except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16] }
+      ports:
+        - { protocol: TCP, port: 443 }
+        - { protocol: TCP, port: 587 }
+        - { protocol: TCP, port: 22 }
+{{- end }}

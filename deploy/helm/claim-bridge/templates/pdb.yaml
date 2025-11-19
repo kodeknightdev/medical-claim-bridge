@@ -1,0 +1,15 @@
+{{- range $name, $svc := .Values.services }}
+{{- if and (eq (include "cb.enabled" $svc) "true") (or (gt (int $svc.replicas) 1) (and $svc.hpa $svc.hpa.enabled)) }}
+{{- $ctx := dict "name" $name "root" $ }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "cb.fullname" (dict "Release" $.Release "name" $name) }}
+  labels: {{- include "cb.labels" $ctx | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: {{- include "cb.selector" $ctx | nindent 6 }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,8 @@
+apiVersion: v2
+name: claim-bridge
+description: Medical claims clearinghouse demo (synthetic data, simplified X12, not certified)
+type: application
+version: 0.4.0
+appVersion: "1.0.0"
+kubeVersion: ">=1.29.0-0"
+keywords: [claims, x12, healthcare, demo]

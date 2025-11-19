@@ -1,0 +1,19 @@
+{{- range $name, $svc := .Values.services }}
+{{- if eq (include "cb.enabled" $svc) "true" }}
+{{- $ctx := dict "name" $name "root" $ }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cb.fullname" (dict "Release" $.Release "name" $name) }}
+  labels: {{- include "cb.labels" $ctx | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector: {{- include "cb.selector" $ctx | nindent 4 }}
+  ports:
+    - { name: http, port: {{ $svc.port }}, targetPort: http }
+    {{- if $svc.grpcPort }}
+    - { name: grpc, port: {{ $svc.grpcPort }}, targetPort: grpc, appProtocol: kubernetes.io/h2c }
+    {{- end }}
+{{- end }}
+{{- end }}
