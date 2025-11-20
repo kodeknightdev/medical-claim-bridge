@@ -1,0 +1,13 @@
+# Copy to terraform.tfvars (git-ignored). All ids below are placeholders.
+subscription_id           = "00000000-0000-0000-0000-000000000000"
+tenant_id                 = "00000000-0000-0000-0000-000000000000"
+environment               = "prod"
+location                  = "eastus2"
+sql_admin_group_name      = "sg-claim-bridge-sql-admins"
+sql_admin_group_object_id = "00000000-0000-0000-0000-000000000000"
+aks_admin_group_object_id = "00000000-0000-0000-0000-000000000000"
+aks_node_count_max        = 8
+sql_sku                   = "S3"
+payer_sftp_public_keys = {
+  payer-b = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPlaceholderKeyReplaceMe000000000000000000 payer-b"
+}
