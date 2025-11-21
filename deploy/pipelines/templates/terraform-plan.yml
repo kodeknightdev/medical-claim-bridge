@@ -1,0 +1,48 @@
+parameters:
+  - name: environment
+    type: string
+
+jobs:
+  - job: Plan_${{ parameters.environment }}
+    displayName: Terraform plan (${{ parameters.environment }})
+    pool: { vmImage: ubuntu-24.04 }
+    steps:
+      - task: TerraformInstaller@1
+        inputs: { terraformVersion: 1.11.4 }
+      - task: TerraformTaskV4@4
+        displayName: init
+        inputs:
+          provider: azurerm
+          command: init
+          workingDirectory: infra/terraform/envs/${{ parameters.environment }}
+          backendServiceArm: azure-arm-connection
+          backendAzureRmResourceGroupName: $(tfStateResourceGroup)
+          backendAzureRmStorageAccountName: $(tfStateStorageAccount)
+          backendAzureRmContainerName: tfstate
+          backendAzureRmKey: claim-bridge-${{ parameters.environment }}.tfstate
+      # payer SFTP public keys are kept as a secure file per environment, not in variables
+      - task: DownloadSecureFile@1
+        name: payerKeys
+        inputs:
+          secureFile: payer-sftp-keys-${{ parameters.environment }}.tfvars.json
+      - task: TerraformTaskV4@4
+        displayName: validate
+        inputs:
+          provider: azurerm
+          command: validate
+          workingDirectory: infra/terraform/envs/${{ parameters.environment }}
+      - task: TerraformTaskV4@4
+        displayName: plan
+        inputs:
+          provider: azurerm
+          command: plan
+          workingDirectory: infra/terraform/envs/${{ parameters.environment }}
+          environmentServiceNameAzureRM: azure-arm-connection
+          commandOptions: >-
+            -input=false -out=tfplan
+            -var subscription_id=$(subscriptionId) -var tenant_id=$(tenantId) -var environment=${{ parameters.environment }}
+            -var sql_admin_group_name=$(sqlAdminGroupName) -var sql_admin_group_object_id=$(sqlAdminGroupObjectId)
+            -var aks_admin_group_object_id=$(aksAdminGroupObjectId)
+            -var-file=$(payerKeys.secureFilePath)
+      - publish: infra/terraform/envs/${{ parameters.environment }}/tfplan
+        artifact: tfplan-${{ parameters.environment }}

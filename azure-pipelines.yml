@@ -1,0 +1,111 @@
+# claim-bridge CI/CD (Azure DevOps). Secrets and ids come from the claim-bridge-common variable group.
+trigger:
+  branches:
+    include: [main]
+  paths:
+    include:
+      - src/*
+      - angular-frontend/*
+      - tools/*
+      - tests/*
+      - deploy/*
+      - infra/*
+      - azure-pipelines.yml
+      - Directory.Packages.props
+      - global.json
+
+pr:
+  branches:
+    include: [main]
+
+variables:
+  - group: claim-bridge-common
+  - name: dotnetSdk
+    value: 9.0.304
+  - name: pythonVersion
+    value: "3.12"
+  - name: nodeVersion
+    value: 20.19.x
+  - name: imageTag
+    value: $(Build.BuildNumber)
+
+name: 1.0.$(Rev:r)
+
+stages:
+  - stage: BuildTest
+    displayName: Build & Test
+    jobs:
+      - template: deploy/pipelines/templates/detect-changes.yml
+      - template: deploy/pipelines/templates/dotnet-build-test.yml
+      - template: deploy/pipelines/templates/python-test.yml
+        parameters:
+          services: [denial-predictor, analytics]
+      - template: deploy/pipelines/templates/angular-test.yml
+
+  - stage: SecurityScan
+    displayName: Security scan
+    dependsOn: BuildTest
+    jobs:
+      - template: deploy/pipelines/templates/security-scan.yml
+
+  - stage: Images
+    displayName: Images
+    dependsOn: [BuildTest, SecurityScan]
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    variables:
+      changes: $[ stageDependencies.BuildTest.DetectChanges.outputs['diff.components'] ]
+    jobs:
+      - template: deploy/pipelines/templates/docker-images.yml
+        parameters:
+          images:
+            - { name: identity, dockerfile: src/services/identity/Dockerfile, context: ., paths: src/services/identity }
+            - { name: providers, dockerfile: src/services/providers/Dockerfile, context: ., paths: src/services/providers }
+            - { name: claims, dockerfile: src/services/claims/Dockerfile, context: ., paths: src/services/claims }
+            - { name: scrubber, dockerfile: src/services/scrubber/Dockerfile, context: ., paths: src/services/scrubber }
+            - { name: payers-gateway, dockerfile: src/services/payers-gateway/Dockerfile, context: ., paths: src/services/payers-gateway }
+            - { name: remittance, dockerfile: src/services/remittance/Dockerfile, context: ., paths: src/services/remittance }
+            - { name: notifications, dockerfile: src/services/notifications/Dockerfile, context: ., paths: src/services/notifications }
+            - { name: gateway, dockerfile: src/gateway/Dockerfile, context: ., paths: src/gateway }
+            - { name: denial-predictor, dockerfile: src/services/denial-predictor/Dockerfile, context: src/services/denial-predictor, paths: src/services/denial-predictor }
+            - { name: analytics, dockerfile: src/services/analytics/Dockerfile, context: src/services/analytics, paths: src/services/analytics }
+            - { name: portal, dockerfile: angular-frontend/Dockerfile, context: angular-frontend, paths: angular-frontend }
+            - { name: payer-sim, dockerfile: tools/payer-sim/Dockerfile, context: ., paths: tools/payer-sim }
+
+  - stage: InfraPlan
+    displayName: Infra plan
+    dependsOn: BuildTest
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - template: deploy/pipelines/templates/terraform-plan.yml
+        parameters: { environment: dev }
+      - template: deploy/pipelines/templates/terraform-plan.yml
+        parameters: { environment: prod }
+
+  - stage: DeployDev
+    displayName: Deploy Dev
+    dependsOn: [Images, InfraPlan]
+    jobs:
+      - template: deploy/pipelines/templates/helm-deploy.yml
+        parameters:
+          environment: claim-bridge-dev
+          valuesFile: deploy/helm/claim-bridge/values-dev.yaml
+          namespace: claim-bridge-dev
+
+  - stage: SmokeTest
+    displayName: Smoke test
+    dependsOn: DeployDev
+    jobs:
+      - template: deploy/pipelines/templates/smoke-test.yml
+        parameters:
+          baseUrl: $(devBaseUrl)
+
+  - stage: DeployProd
+    displayName: Deploy Prod
+    dependsOn: SmokeTest
+    # the claim-bridge-prod environment carries a manual approval check
+    jobs:
+      - template: deploy/pipelines/templates/helm-deploy.yml
+        parameters:
+          environment: claim-bridge-prod
+          valuesFile: deploy/helm/claim-bridge/values-prod.yaml
+          namespace: claim-bridge

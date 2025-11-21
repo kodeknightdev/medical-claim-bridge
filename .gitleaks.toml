@@ -1,0 +1,17 @@
+title = "claim-bridge secret scan"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Local demo values that are published on purpose"
+regexes = [
+  # Azurite's well-known development account key, documented by Microsoft
+  '''Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==''',
+  '''sk_test_xxx''',
+  '''REPLACE_ME''',
+]
+paths = [
+  '''\.env\.example''',
+  '''tools/samples/''',
+]

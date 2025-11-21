@@ -1,0 +1,14 @@
+jobs:
+  - job: Angular
+    displayName: Angular build and test
+    pool: { vmImage: ubuntu-24.04 }
+    steps:
+      - task: NodeTool@0
+        inputs: { versionSpec: $(nodeVersion) }
+      - script: npm ci --no-audit --no-fund
+        workingDirectory: angular-frontend
+      - script: npx ng build --configuration production
+        workingDirectory: angular-frontend
+      - script: npx ng test --watch=false --browsers=ChromeHeadlessCI --code-coverage
+        workingDirectory: angular-frontend
+        displayName: Karma (headless Chrome)

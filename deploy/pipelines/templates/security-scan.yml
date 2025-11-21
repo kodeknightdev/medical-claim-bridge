@@ -1,0 +1,31 @@
+# Dependency audits report but do not block; a leaked secret does.
+jobs:
+  - job: Dependencies
+    displayName: Dependency audit
+    pool: { vmImage: ubuntu-24.04 }
+    steps:
+      - task: UseDotNet@2
+        inputs: { packageType: sdk, useGlobalJson: true }
+      - script: dotnet restore ClaimBridge.sln && dotnet list ClaimBridge.sln package --vulnerable --include-transitive
+        displayName: dotnet list package --vulnerable
+        continueOnError: true
+      - script: npm ci --no-audit --no-fund && npm audit --omit=dev --audit-level=high
+        workingDirectory: angular-frontend
+        displayName: npm audit
+        continueOnError: true
+      - script: |
+          pip install pip-audit==2.9.0
+          pip-audit -r src/services/denial-predictor/requirements.txt
+          pip-audit -r src/services/analytics/requirements.txt
+        displayName: pip-audit
+        continueOnError: true
+
+  - job: Secrets
+    displayName: Secret scan (blocking)
+    pool: { vmImage: ubuntu-24.04 }
+    steps:
+      - checkout: self
+        fetchDepth: 0
+      - script: |
+          docker run --rm -v "$(Build.SourcesDirectory)":/repo zricethezav/gitleaks:v8.24.0 detect --source /repo --config /repo/.gitleaks.toml --redact --exit-code 1
+        displayName: gitleaks

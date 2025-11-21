@@ -1,0 +1,20 @@
+parameters:
+  - name: baseUrl
+    type: string
+
+jobs:
+  - job: Smoke
+    displayName: Smoke test
+    pool: { vmImage: ubuntu-24.04 }
+    steps:
+      - bash: |
+          set -euo pipefail
+          base="${{ parameters.baseUrl }}"
+          for path in /alive /.well-known/openid-configuration /; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$base$path")
+            echo "$path -> $code"
+            test "$code" = "200"
+          done
+          token=$(curl -sf -u "sunrise-pms:$(smokeClientSecret)" -d 'grant_type=client_credentials&scope=claims.read' "$base/connect/token" | jq -r .access_token)
+          curl -sf -H "Authorization: Bearer $token" "$base/api/gateway/me" | jq .
+        displayName: Health, discovery and an authenticated call

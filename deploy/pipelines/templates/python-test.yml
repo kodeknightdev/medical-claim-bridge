@@ -1,0 +1,21 @@
+parameters:
+  - name: services
+    type: object
+
+jobs:
+  - ${{ each service in parameters.services }}:
+      - job: Python_${{ replace(service, '-', '_') }}
+        displayName: Python ${{ service }}
+        pool: { vmImage: ubuntu-24.04 }
+        steps:
+          - task: UsePythonVersion@0
+            inputs: { versionSpec: $(pythonVersion) }
+          - script: pip install -r requirements-dev.txt
+            workingDirectory: src/services/${{ service }}
+            displayName: Install pinned requirements
+          - script: pytest -q --junitxml=$(Agent.TempDirectory)/${{ service }}.xml
+            workingDirectory: src/services/${{ service }}
+            displayName: pytest
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs: { testResultsFormat: JUnit, testResultsFiles: "$(Agent.TempDirectory)/${{ service }}.xml" }

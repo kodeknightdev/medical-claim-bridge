@@ -1,0 +1,23 @@
+# Works out which components changed so the Images stage only rebuilds what it must.
+jobs:
+  - job: DetectChanges
+    displayName: Detect changed components
+    pool: { vmImage: ubuntu-24.04 }
+    steps:
+      - checkout: self
+        fetchDepth: 2
+      - bash: |
+          set -euo pipefail
+          changed=$(git diff --name-only HEAD~1 HEAD || git ls-files)
+          components=""
+          for p in src/services/identity src/services/providers src/services/claims src/services/scrubber src/services/payers-gateway \
+                   src/services/remittance src/services/notifications src/gateway src/services/denial-predictor src/services/analytics \
+                   angular-frontend tools/payer-sim; do
+            if echo "$changed" | grep -q "^$p/"; then components="$components;$p"; fi
+          done
+          # shared code and central versions touch every .NET image
+          if echo "$changed" | grep -qE "^(src/shared/|Directory\.Packages\.props|Directory\.Build\.props|global\.json)"; then components="$components;all"; fi
+          echo "changed: $components"
+          echo "##vso[task.setvariable variable=components;isOutput=true]$components"
+        name: diff
+        displayName: Diff against previous commit

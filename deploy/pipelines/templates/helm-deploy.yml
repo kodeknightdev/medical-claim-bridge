@@ -1,0 +1,35 @@
+parameters:
+  - name: environment
+    type: string
+  - name: valuesFile
+    type: string
+  - name: namespace
+    type: string
+
+jobs:
+  - deployment: Helm
+    displayName: Helm upgrade (${{ parameters.namespace }})
+    pool: { vmImage: ubuntu-24.04 }
+    environment: ${{ parameters.environment }}
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - checkout: self
+            - task: HelmInstaller@1
+              inputs: { helmVersionToInstall: 3.17.3 }
+            - task: HelmDeploy@0
+              displayName: helm upgrade --install
+              inputs:
+                connectionType: Azure Resource Manager
+                azureSubscriptionEndpoint: azure-arm-connection
+                azureResourceGroup: $(aksResourceGroup)
+                kubernetesCluster: $(aksClusterName)
+                namespace: ${{ parameters.namespace }}
+                command: upgrade
+                chartType: FilePath
+                chartPath: deploy/helm/claim-bridge
+                releaseName: claim-bridge
+                valueFile: ${{ parameters.valuesFile }}
+                overrideValues: global.imageTag=$(imageTag),global.imageRegistry=$(acrLoginServer)
+                arguments: --create-namespace --atomic --timeout 10m
