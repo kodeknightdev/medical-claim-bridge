@@ -1,0 +1,24 @@
+{
+  "payerId": "PAYER-A",
+  "billingNpi": "1999000015",
+  "renderingNpi": "1999000114",
+  "patient": {
+    "memberId": "NWH1000002",
+    "firstName": "Jamie",
+    "lastName": "Example",
+    "dateOfBirth": "1958-02-12",
+    "gender": "F"
+  },
+  "diagnoses": ["I10"],
+  "lines": [
+    {
+      "procedureCode": "99213",
+      "modifiers": [],
+      "units": 1,
+      "charge": 120.00,
+      "serviceDate": "__DOS__",
+      "placeOfService": "11",
+      "dxPointers": [1]
+    }
+  ]
+}
