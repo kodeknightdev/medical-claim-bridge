@@ -2,12 +2,9 @@
 
 A medical claims clearinghouse built as a set of microservices: practices submit professional claims, claim-bridge
 scrubs them, routes them to each payer in that payer's format, tracks acknowledgements and status, posts the
-remittances, and keeps the practice informed through a portal, an API and signed webhooks.
-
-> **Demo only.** All patients, members, providers and payers are synthetic. NPIs and tax ids are made up (NPIs pass
-> the check digit but belong to no one). The X12 support is a simplified subset of 837P, 999, 277CA and 835, the
-> payers are simulators, and the denial model is trained on generated history. Nothing here is certified or
-> suitable for real PHI.
+remittances, and keeps the practice informed through a portal, an API and signed webhooks. It's a demo: all the
+data is made up, the payers are simulators and the X12 support is a simplified subset, so please don't use it with
+real patient data.
 
 ## Features
 
