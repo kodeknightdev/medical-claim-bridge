@@ -5,9 +5,9 @@ WORKDIR /src
 COPY global.json Directory.Build.props Directory.Packages.props ./
 COPY src/shared/ src/shared/
 COPY tools/payer-sim/ tools/payer-sim/
-RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
+RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages,sharing=locked \
     dotnet restore tools/payer-sim/ClaimBridge.PayerSim/ClaimBridge.PayerSim.csproj --locked-mode
-RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
+RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages,sharing=locked \
     dotnet publish tools/payer-sim/ClaimBridge.PayerSim/ClaimBridge.PayerSim.csproj -c Release -o /app --no-restore /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0.8-bookworm-slim AS runtime
