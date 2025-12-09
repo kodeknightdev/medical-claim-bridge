@@ -5,9 +5,9 @@ WORKDIR /src
 COPY global.json Directory.Build.props Directory.Packages.props ./
 COPY src/shared/ src/shared/
 COPY src/services/identity/ src/services/identity/
-RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
+RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages,sharing=locked \
     dotnet restore src/services/identity/ClaimBridge.Identity/ClaimBridge.Identity.csproj --locked-mode
-RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
+RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages,sharing=locked \
     dotnet publish src/services/identity/ClaimBridge.Identity/ClaimBridge.Identity.csproj -c Release -o /app --no-restore /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0.8-bookworm-slim AS runtime
