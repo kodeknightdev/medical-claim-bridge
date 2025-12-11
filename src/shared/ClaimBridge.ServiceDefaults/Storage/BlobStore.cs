@@ -93,11 +93,26 @@ public static class BlobStoreExtensions
 {
     public static IServiceCollection AddClaimBridgeBlobStorage(this IServiceCollection services, IConfiguration config)
     {
-        var cs = config.GetConnectionString("Blob");
-        if (string.IsNullOrWhiteSpace(cs)) cs = "UseDevelopmentStorage=true";
-        services.AddSingleton(new BlobServiceClient(cs));
+        services.AddSingleton(new BlobServiceClient(ConnectionString(config)));
         services.AddSingleton<IBlobStore, AzureBlobStore>();
         services.AddHealthChecks().AddAzureBlobStorage(name: "blob", tags: [ServiceDefaultsExtensions.ReadyTag]);
         return services;
+    }
+
+    /// <summary>
+    /// <c>Storage:Provider</c> local (default) falls back to Azurite; azure insists on a real storage account so a
+    /// missing setting fails at start instead of quietly writing to an emulator.
+    /// </summary>
+    public static string ConnectionString(IConfiguration config)
+    {
+        var cs = config.GetConnectionString("Blob");
+        return (config["Storage:Provider"] ?? "local").ToLowerInvariant() switch
+        {
+            "local" => string.IsNullOrWhiteSpace(cs) ? "UseDevelopmentStorage=true" : cs,
+            "azure" when string.IsNullOrWhiteSpace(cs) || cs.Contains("UseDevelopmentStorage") || cs.Contains("devstoreaccount1") =>
+                throw new InvalidOperationException("Storage:Provider is azure but ConnectionStrings:Blob is empty or points at Azurite."),
+            "azure" => cs,
+            var other => throw new InvalidOperationException($"Unknown Storage:Provider '{other}'. Use local or azure.")
+        };
     }
 }

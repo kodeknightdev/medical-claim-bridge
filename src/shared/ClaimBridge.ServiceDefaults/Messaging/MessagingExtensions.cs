@@ -27,8 +27,9 @@ public static class MessagingExtensions
     public static MessagingBuilder<TDb> AddClaimBridgeMessaging<TDb>(this IServiceCollection services, IConfiguration config, string serviceName)
         where TDb : DbContext, IMessagingDbContext
     {
-        var options = config.GetSection("Kafka").Get<KafkaOptions>() ?? new KafkaOptions();
-        services.Configure<KafkaOptions>(config.GetSection("Kafka"));
+        var options = new KafkaOptions();
+        KafkaOptions.Bind(config, options);
+        services.Configure<KafkaOptions>(o => KafkaOptions.Bind(config, o));
         services.AddSingleton(new ServiceIdentity(serviceName));
         services.AddSingleton<KafkaProducer>();
         services.AddScoped<IEventOutbox, EventOutbox<TDb>>();
@@ -36,11 +37,7 @@ public static class MessagingExtensions
         if (options.Enabled)
         {
             services.AddHostedService<OutboxDispatcher<TDb>>();
-            services.AddHealthChecks().AddKafka(new Confluent.Kafka.ProducerConfig
-            {
-                BootstrapServers = options.BootstrapServers,
-                MessageTimeoutMs = 3000
-            }, topic: "healthchecks", name: "kafka", tags: [ServiceDefaultsExtensions.ReadyTag]);
+            services.AddHealthChecks().AddKafka(options.Apply(new Confluent.Kafka.ProducerConfig { MessageTimeoutMs = 3000 }), topic: "healthchecks", name: "kafka", tags: [ServiceDefaultsExtensions.ReadyTag]);
         }
         return new MessagingBuilder<TDb>(services, options);
     }
