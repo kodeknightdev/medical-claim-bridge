@@ -1,3 +1,4 @@
+using ClaimBridge.ServiceDefaults.Configuration;
 using ClaimBridge.ServiceDefaults.Logging;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -19,6 +20,8 @@ public static class ServiceDefaultsExtensions
     /// <summary>Logging, problem details, health checks and OpenAPI shared by every service.</summary>
     public static WebApplicationBuilder AddServiceDefaults(this WebApplicationBuilder builder, string serviceName)
     {
+        builder.Configuration.AddClaimBridgeSecrets();
+
         builder.Services.AddSerilog((services, cfg) => cfg
             .ReadFrom.Configuration(builder.Configuration)
             .Enrich.FromLogContext()
