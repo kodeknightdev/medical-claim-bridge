@@ -1,11 +1,22 @@
 claim-bridge {{ .Chart.AppVersion }} installed as {{ .Release.Name }}.
+Providers: messaging={{ .Values.providers.messaging }} storage={{ .Values.providers.storage }} secrets={{ .Values.providers.secrets }}
+{{- if .Values.localDependencies.enabled }}
+
+SQL Server, Kafka, Redis, Azurite and MailHog run in the cluster; services retry until the init jobs finish.
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ .Release.Name }}-gateway 5080:8080
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ .Release.Name }}-portal 4200:8080
+Portal: http://localhost:4200/
+{{- else }}
 
 Portal: https://{{ .Values.ingress.host }}/
+{{- end }}
 {{- if (index .Values.services "payer-sim").enabled }}
-Payer simulator is running (dev only).
+Payer simulator is running (dev and local only).
 {{- else }}
 Payer endpoints point at real payer URLs from values; the simulator is not deployed.
 {{- end }}
-{{- if not .Values.global.existingSecret }}
+{{- if eq .Values.providers.secrets "keyvault" }}
+Secrets are mounted from Key Vault {{ .Values.keyVault.name }} through the CSI driver.
+{{- else if and (not .Values.global.existingSecret) (not .Values.localDependencies.enabled) }}
 WARNING: using the placeholder secret {{ include "cb.secretName" . }}; replace REPLACE_ME values before use.
 {{- end }}

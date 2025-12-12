@@ -36,7 +36,7 @@ services:
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
       SERVICE_DB_PASSWORD: ${SERVICE_DB_PASSWORD}
     volumes:
-      - ./sqlserver/init.sh:/init/init.sh:ro
+      - ./helm/claim-bridge/files/sqlserver-init.sh:/init/init.sh:ro
     depends_on:
       sqlserver: { condition: service_healthy }
 
@@ -70,7 +70,7 @@ services:
     environment:
       KAFKA_BOOTSTRAP: kafka:9092
     volumes:
-      - ./kafka/create-topics.sh:/init/create-topics.sh:ro
+      - ./helm/claim-bridge/files/kafka-create-topics.sh:/init/create-topics.sh:ro
     depends_on:
       kafka: { condition: service_healthy }
 

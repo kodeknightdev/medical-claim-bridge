@@ -54,32 +54,17 @@ spec:
             - configMapRef:
                 name: {{ $full }}
           env:
-            {{- if $svc.python }}
-            - name: DATABASE_URL
-              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: {{ $name }}-database-url } }
-            - name: BLOB_CONNECTION_STRING
-              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: blob-connection-string } }
-            {{- else }}
-            {{- if $svc.database }}
-            - name: ConnectionStrings__{{ $name | replace "-" "" | title | replace "Payersgateway" "Payers" }}Db
-              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: {{ $name }}-connection-string } }
+            {{- if eq $.Values.providers.secrets "kubernetes" }}
+            {{- range include "cb.secretRefs" (dict "name" $name "svc" $svc "root" $) | fromYamlArray }}
+            - name: {{ .env }}
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: {{ .key }} } }
             {{- end }}
-            - name: ConnectionStrings__Redis
-              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: redis-connection-string } }
-            - name: ConnectionStrings__Blob
-              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: blob-connection-string } }
-            - name: Phi__Key
-              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: phi-key } }
+            {{- end }}
             {{- if $svc.tokenKeysSecret }}
             - { name: Auth__Keys__SigningCertificatePath, value: /keys/signing.pfx }
             - { name: Auth__Keys__EncryptionCertificatePath, value: /keys/encryption.pfx }
             - name: Auth__Keys__CertificatePassword
               valueFrom: { secretKeyRef: { name: {{ $svc.tokenKeysSecret }}, key: password } }
-            {{- end }}
-            {{- if eq $name "payers-gateway" }}
-            - name: Payers__PAYER-A__CallbackToken
-              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: payer-a-callback-token } }
-            {{- end }}
             {{- end }}
           {{- end }}
           readinessProbe:
@@ -105,10 +90,20 @@ spec:
             {{- if $svc.tokenKeysSecret }}
             - { name: token-keys, mountPath: /keys, readOnly: true }
             {{- end }}
+            {{- if and (eq $.Values.providers.secrets "keyvault") (not $svc.static) }}
+            - { name: secrets-store, mountPath: /mnt/secrets-store, readOnly: true }
+            {{- end }}
           {{- end }}
       {{- if or $svc.python (not $svc.static) }}
       volumes:
         - { name: tmp, emptyDir: {} }
+        {{- if and (eq $.Values.providers.secrets "keyvault") (not $svc.static) }}
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes: { secretProviderClass: {{ $full }} }
+        {{- end }}
         {{- if $svc.tokenKeysSecret }}
         - name: token-keys
           secret:

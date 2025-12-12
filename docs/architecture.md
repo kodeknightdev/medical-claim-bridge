@@ -90,7 +90,7 @@ flowchart LR
 ## Data ownership
 
 Each service has its own SQL Server database and its own login, created by
-[`deploy/sqlserver/init.sh`](../deploy/sqlserver/init.sh). A login is `db_owner` of its own database and has no rights
+[`sqlserver-init.sh`](../deploy/helm/claim-bridge/files/sqlserver-init.sh). A login is `db_owner` of its own database and has no rights
 anywhere else, so a cross-service join is impossible by construction rather than by convention. In Azure the same
 layout becomes one Azure SQL server with one database per service ([`infra/terraform/modules/mssql`](../infra/terraform/modules/mssql/main.tf)).
 
@@ -114,7 +114,7 @@ data is always a read model that can be rebuilt from the owner.
 Every message is a JSON envelope `{id, type, schemaVersion, occurredAt, source, correlationId, data}`
 ([`EventEnvelope`](../src/shared/ClaimBridge.Contracts/Events/EventEnvelope.cs)). Keys are claim ids, batch ids or file
 ids; never member ids. Payloads carry no names or dates of birth. Each topic has a `.retry` lane and a `.dlq`
-created by [`deploy/kafka/create-topics.sh`](../deploy/kafka/create-topics.sh).
+created by [`kafka-create-topics.sh`](../deploy/helm/claim-bridge/files/kafka-create-topics.sh).
 
 | Topic | Producer | Consumers | Key | Payload highlights |
 |---|---|---|---|---|

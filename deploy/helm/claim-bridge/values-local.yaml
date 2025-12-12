@@ -1,0 +1,73 @@
+# Any Kubernetes cluster with no Azure at all (Docker Desktop, kind). Uses the images built by docker compose
+# (claim-bridge/<service>:local) and runs SQL Server, Kafka, Redis, Azurite and MailHog in the cluster.
+#
+#   docker compose build
+#   helm upgrade --install claim-bridge deploy/helm/claim-bridge -n claim-bridge --create-namespace \
+#     -f deploy/helm/claim-bridge/values-local.yaml --set-file localSecrets.phiKey=.local/phi.key
+#   kubectl -n claim-bridge port-forward svc/claim-bridge-gateway 5080:8080
+#   kubectl -n claim-bridge port-forward svc/claim-bridge-portal 4200:8080
+global:
+  imageRegistry: ""
+  imageTag: local
+  imagePullPolicy: IfNotPresent
+  environment: Development
+  publicIssuer: http://localhost:5080/
+  otlpEndpoint: ""
+  seed: true
+  corsOrigin: http://localhost:4200
+
+providers:
+  messaging: kafka
+  storage: local
+  secrets: kubernetes
+
+localDependencies:
+  enabled: true
+
+# the same development-only values as .env.example; the PHI key comes from a git-ignored file
+localSecrets:
+  saPassword: Local_Dev_Only_Pa55!
+  servicePassword: Svc_Dev_Only_Pa55!
+  payerACallbackToken: northwind-callback-dev-token
+
+ingress:
+  enabled: false
+
+# local clusters often have no policy engine or ingress-nginx namespace; nothing here leaves the machine
+networkPolicies:
+  enabled: false
+
+services:
+  identity:
+    replicas: 1
+    tokenKeysSecret: ""
+    env:
+      Auth__PortalRedirectUris__0: http://localhost:4200/callback
+      Auth__PortalRedirectUris__1: http://localhost:4200/silent-renew
+      Auth__PortalPostLogoutUris__0: http://localhost:4200/
+      Seed__DemoPassword: Demo@12345
+      Seed__DemoClientSecret: demo-sunrise-secret-change-me
+  providers: { replicas: 1 }
+  claims: { replicas: 1, hpa: { enabled: false } }
+  scrubber: { replicas: 1, hpa: { enabled: false } }
+  payers-gateway:
+    replicas: 1
+    env:
+      Services__Claims: http://claim-bridge-claims:8080/
+      Payers__PAYER-A__BaseUrl: http://claim-bridge-payer-sim:8080/
+      Payers__PAYER-A__CallbackUrl: http://claim-bridge-payers-gateway:8080/api/payers/payer-a/callbacks/adjudication
+      Payers__PAYER-B__BaseUrl: http://claim-bridge-payer-sim:8080/
+      Payers__PAYER-C__BaseUrl: http://claim-bridge-payer-sim:8080/
+  remittance: { replicas: 1 }
+  notifications:
+    replicas: 1
+    hpa: { enabled: false }
+    env:
+      Services__Providers: http://claim-bridge-providers:8080/
+      Smtp__Host: claim-bridge-mailhog
+      Smtp__Port: "1025"
+  denial-predictor:
+    modelStorage: null
+  gateway: { replicas: 1 }
+  portal: { replicas: 1 }
+  payer-sim: { enabled: true }

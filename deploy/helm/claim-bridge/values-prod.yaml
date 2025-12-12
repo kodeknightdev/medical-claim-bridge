@@ -2,9 +2,15 @@ global:
   imageTag: "1.0.0"
   environment: Production
   publicIssuer: https://claims.example.org/
-  existingSecret: claim-bridge-secrets
 ingress:
   host: claims.example.org
+# existing Azure resources; Terraform's outputs or the names of resources created another way
+keyVault:
+  name: kv-claim-bridge-prod
+config:
+  kafkaBootstrap: claim-bridge-prod.servicebus.windows.net:9093
+  redisHost: claim-bridge-prod.redis.cache.windows.net:6380,ssl=true
+  sqlServer: sql-claim-bridge-prod.database.windows.net
 services:
   payer-sim: { enabled: false }
   claims: { hpa: { enabled: true, minReplicas: 3, maxReplicas: 12, cpu: 65 } }

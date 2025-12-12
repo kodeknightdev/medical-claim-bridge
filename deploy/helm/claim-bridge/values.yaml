@@ -6,8 +6,44 @@ global:
   publicIssuer: https://claims.example.org/
   environment: Production
   otlpEndpoint: http://otel-collector.observability:4317
-  # names of pre-created secrets (Key Vault CSI or sealed secrets); the chart never holds real values
+  # with the kubernetes secrets provider: name of a pre-created Secret; empty renders a placeholder (or local) one
   existingSecret: ""
+  # seeds demo users, practices, payer rules and code sets on start (dev and local only)
+  seed: false
+  # defaults to https://<ingress.host>
+  corsOrigin: ""
+
+# How each Azure-only integration is satisfied. The services default to the local options; these defaults describe
+# an Azure deployment whose resources already exist, whether Terraform created them or not.
+providers:
+  messaging: eventhubs   # kafka | eventhubs
+  storage: azure         # local | azure
+  secrets: keyvault      # kubernetes | keyvault
+
+# Used by the keyvault secrets provider (SecretProviderClass per service).
+keyVault:
+  name: kv-claim-bridge
+  tenantId: 00000000-0000-0000-0000-000000000000
+  # client id of the AKS Key Vault secrets provider identity (Terraform output key_vault_identity_client_id)
+  identityClientId: 00000000-0000-0000-0000-000000000000
+
+# In-cluster SQL Server, Kafka, Redis, Azurite and MailHog instead of Azure services (values-local.yaml).
+localDependencies:
+  enabled: false
+  images:
+    sqlserver: mcr.microsoft.com/mssql/server:2022-CU17-ubuntu-22.04
+    kafka: apache/kafka:3.9.0
+    redis: redis:7.4.2-alpine
+    azurite: mcr.microsoft.com/azure-storage/azurite:3.34.0
+    mailhog: mailhog/mailhog:v1.0.1
+
+# Only read with localDependencies; development values, never real ones.
+localSecrets:
+  saPassword: ""
+  servicePassword: ""
+  payerACallbackToken: ""
+  # pass with --set-file localSecrets.phiKey=<git-ignored key file>
+  phiKey: ""
 
 ingress:
   enabled: true
@@ -132,7 +168,8 @@ services:
     image: payer-sim
     port: 8080
     replicas: 1
-    static: true
+    env:
+      Sim__NorthwindCallbackUrl: http://claim-bridge-payers-gateway:8080/api/payers/payer-a/callbacks/adjudication
     resources: { requests: { cpu: 50m, memory: 128Mi }, limits: { cpu: 500m, memory: 256Mi } }
 
 cronJobs:

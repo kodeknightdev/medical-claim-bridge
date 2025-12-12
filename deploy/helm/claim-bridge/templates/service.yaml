@@ -17,3 +17,17 @@ spec:
     {{- end }}
 {{- end }}
 {{- end }}
+{{- if eq (include "cb.enabled" .Values.services.portal) "true" }}
+---
+# the portal image's nginx proxies /api to a host called "gateway" (the compose service name)
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  labels:
+    app.kubernetes.io/part-of: claim-bridge
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  type: ExternalName
+  externalName: {{ printf "%s-gateway.%s.svc.cluster.local" .Release.Name .Release.Namespace }}
+{{- end }}
