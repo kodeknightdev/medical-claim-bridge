@@ -33,8 +33,7 @@ def publish(topic: str, key: str, event_type: str, data: dict) -> None:
     if _producer is None:
         from confluent_kafka import Producer
 
-        _producer = Producer({"bootstrap.servers": settings.kafka_bootstrap_servers, "client.id": settings.service_name,
-                              "enable.idempotence": True})
+        _producer = Producer(settings.kafka_config(**{"client.id": settings.service_name, "enable.idempotence": True}))
     body = envelope(event_type, data, settings.service_name)
     _producer.produce(topic, key=key, value=json.dumps(body),
                       headers={"event-id": body["id"], "event-type": event_type})

@@ -31,10 +31,9 @@ class AnalyticsConsumer(threading.Thread):
         from confluent_kafka import Consumer, Producer
 
         settings = get_settings()
-        conf = {"bootstrap.servers": settings.kafka_bootstrap_servers, "group.id": settings.kafka_group,
-                "auto.offset.reset": "earliest", "enable.auto.commit": False}
-        consumer = Consumer(conf)
-        producer = Producer({"bootstrap.servers": settings.kafka_bootstrap_servers})
+        consumer = Consumer(settings.kafka_config(**{"group.id": settings.kafka_group, "auto.offset.reset": "earliest",
+                                                     "enable.auto.commit": False}))
+        producer = Producer(settings.kafka_config())
         consumer.subscribe(TOPICS + [t + ".retry" for t in TOPICS])
         log.info("Analytics consumer subscribed to %s", TOPICS)
 
