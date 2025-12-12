@@ -2,10 +2,15 @@ global:
   imageTag: dev
   environment: Development
   publicIssuer: https://claims-dev.example.org/
+  seed: true
 ingress:
   host: claims-dev.example.org
+keyVault:
+  name: kv-claim-bridge-dev
 config:
   kafkaBootstrap: claim-bridge-dev.servicebus.windows.net:9093
+  redisHost: claim-bridge-dev.redis.cache.windows.net:6380,ssl=true
+  sqlServer: sql-claim-bridge-dev.database.windows.net
 services:
   identity:
     replicas: 1
@@ -14,7 +19,6 @@ services:
     env:
       Auth__PortalRedirectUris__0: https://claims-dev.example.org/callback
       Auth__PortalPostLogoutUris__0: https://claims-dev.example.org/
-      Seed__Enabled: "true"
   providers: { replicas: 1 }
   claims: { replicas: 1, hpa: { enabled: true, minReplicas: 1, maxReplicas: 3, cpu: 80 } }
   scrubber: { replicas: 1, hpa: { enabled: true, minReplicas: 1, maxReplicas: 3, cpu: 80 } }

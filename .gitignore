@@ -40,3 +40,6 @@ coverage/
 
 # os
 .DS_Store
+
+# local-only key files (PHI key for values-local.yaml)
+.local/

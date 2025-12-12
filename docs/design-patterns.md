@@ -33,7 +33,7 @@ missing sources, and `gateway.composition.partial` is counted. Exposed as `GET /
 ## Database per service
 
 **Problem.** Shared tables couple deployments and leak data across boundaries.
-**Here.** One SQL Server database and login per service ([`deploy/sqlserver/init.sh`](../deploy/sqlserver/init.sh));
+**Here.** One SQL Server database and login per service ([`sqlserver-init.sh`](../deploy/helm/claim-bridge/files/sqlserver-init.sh));
 each service owns its EF Core migrations (for example
 [`ClaimsDb`](../src/services/claims/ClaimBridge.Claims/Data/ClaimsDb.cs)) or Alembic migrations for the Python
 services. See [architecture](architecture.md#data-ownership).
@@ -107,7 +107,7 @@ has seen. Offsets are committed only after the transaction. The Python services 
 **Here.** On failure `KafkaConsumerHost` republishes to `<topic>.retry` with an `x-attempt` header and an exponential
 delay (5 s base); a separate consumer group handles the retry lane; after three attempts, or immediately for an
 unreadable message, it goes to `<topic>.dlq` with the error. Topics are created by
-[`create-topics.sh`](../deploy/kafka/create-topics.sh).
+[`kafka-create-topics.sh`](../deploy/helm/claim-bridge/files/kafka-create-topics.sh).
 
 ## Idempotency key and duplicate detection
 
