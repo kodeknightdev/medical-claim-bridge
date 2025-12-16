@@ -1,0 +1,19 @@
+# Lints and renders the chart for every values file, including values-local.yaml (no Azure, no Terraform).
+jobs:
+  - job: Helm
+    displayName: Helm lint and template
+    pool: { vmImage: ubuntu-24.04 }
+    steps:
+      - task: HelmInstaller@1
+        inputs: { helmVersionToInstall: 3.17.3 }
+      - bash: |
+          set -euo pipefail
+          chart=deploy/helm/claim-bridge
+          for values in values-dev.yaml values-prod.yaml; do
+            helm lint "$chart" -f "$chart/$values"
+            helm template claim-bridge "$chart" -f "$chart/$values" > /dev/null
+          done
+          # values-local needs a PHI key; any base64 value renders
+          helm lint "$chart" -f "$chart/values-local.yaml" --set localSecrets.phiKey=Y2ktb25seQ==
+          helm template claim-bridge "$chart" -f "$chart/values-local.yaml" --set localSecrets.phiKey=Y2ktb25seQ== > /dev/null
+        displayName: lint and template (dev, prod, local)

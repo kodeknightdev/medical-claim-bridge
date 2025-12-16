@@ -31,5 +31,6 @@ jobs:
                 chartPath: deploy/helm/claim-bridge
                 releaseName: claim-bridge
                 valueFile: ${{ parameters.valuesFile }}
-                overrideValues: global.imageTag=$(imageTag),global.imageRegistry=$(acrLoginServer)
+                # ids of existing Azure resources come from the variable group, with or without Terraform
+                overrideValues: global.imageTag=$(imageTag),global.imageRegistry=$(acrLoginServer),keyVault.tenantId=$(tenantId),keyVault.identityClientId=$(keyVaultIdentityClientId)
                 arguments: --create-namespace --atomic --timeout 10m

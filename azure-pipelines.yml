@@ -31,6 +31,14 @@ variables:
 
 name: 1.0.$(Rev:r)
 
+parameters:
+  # Terraform is optional: leave this off when the Azure resources already exist (created by hand, by another team or
+  # by an earlier run) and their names come from the values files and the variable group.
+  - name: provisionInfra
+    displayName: Run Terraform plan
+    type: boolean
+    default: false
+
 stages:
   - stage: BuildTest
     displayName: Build & Test
@@ -41,6 +49,7 @@ stages:
         parameters:
           services: [denial-predictor, analytics]
       - template: deploy/pipelines/templates/angular-test.yml
+      - template: deploy/pipelines/templates/helm-check.yml
 
   - stage: SecurityScan
     displayName: Security scan
@@ -71,19 +80,23 @@ stages:
             - { name: portal, dockerfile: angular-frontend/Dockerfile, context: angular-frontend, paths: angular-frontend }
             - { name: payer-sim, dockerfile: tools/payer-sim/Dockerfile, context: ., paths: tools/payer-sim }
 
-  - stage: InfraPlan
-    displayName: Infra plan
-    dependsOn: BuildTest
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-    jobs:
-      - template: deploy/pipelines/templates/terraform-plan.yml
-        parameters: { environment: dev }
-      - template: deploy/pipelines/templates/terraform-plan.yml
-        parameters: { environment: prod }
+  - ${{ if eq(parameters.provisionInfra, true) }}:
+    - stage: InfraPlan
+      displayName: Infra plan
+      dependsOn: BuildTest
+      condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+      jobs:
+        - template: deploy/pipelines/templates/terraform-plan.yml
+          parameters: { environment: dev }
+        - template: deploy/pipelines/templates/terraform-plan.yml
+          parameters: { environment: prod }
 
   - stage: DeployDev
     displayName: Deploy Dev
-    dependsOn: [Images, InfraPlan]
+    ${{ if eq(parameters.provisionInfra, true) }}:
+      dependsOn: [Images, InfraPlan]
+    ${{ else }}:
+      dependsOn: [Images]
     jobs:
       - template: deploy/pipelines/templates/helm-deploy.yml
         parameters:
