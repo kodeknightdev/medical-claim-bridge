@@ -57,6 +57,19 @@ TOKEN=$(curl -s -u sunrise-pms:demo-sunrise-secret-change-me -d grant_type=clien
 The response has a `statusUrl`; within a minute or so the claim moves from `Received` through `Submitted` and
 `AcceptedByPayer` to `Paid`, `Posted` and `Closed`, and the webhook receiver shows the signed deliveries.
 
+## Kubernetes
+
+The Helm chart in `deploy/helm/claim-bridge` runs the same images on any cluster. `values-local.yaml` needs no Azure
+and no Terraform: it brings its own SQL Server, Kafka, Redis and Azurite.
+
+```bash
+mkdir -p .local && openssl rand -base64 32 > .local/phi.key
+helm upgrade --install claim-bridge deploy/helm/claim-bridge -n claim-bridge --create-namespace -f deploy/helm/claim-bridge/values-local.yaml --set-file localSecrets.phiKey=.local/phi.key
+```
+
+On AKS use `values-dev.yaml` or `values-prod.yaml`. The Azure resources can come from `infra/terraform` or already
+exist; either way the chart only needs their names (Event Hubs, Redis, SQL server, Key Vault).
+
 ## Seed data and demo logins
 
 The seed creates three practices (Sunrise Family Clinic, Lakeside Orthopedics, Harbor Pediatrics), their enrollments
