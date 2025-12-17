@@ -30,6 +30,13 @@ To start over with empty databases:
 docker compose down -v
 ```
 
+### On a local Kubernetes cluster
+
+The same images run on Docker Desktop's Kubernetes or kind with the Helm chart and
+[`values-local.yaml`](../deploy/helm/claim-bridge/values-local.yaml), which brings its own SQL Server, Kafka, Redis,
+Azurite and MailHog and needs no Azure account or Terraform. The commands are in
+[deployment](deployment.md#kubernetes-without-azure).
+
 ### Ports
 
 | Port | What |

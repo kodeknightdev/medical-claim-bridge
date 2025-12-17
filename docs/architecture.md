@@ -139,5 +139,7 @@ created by [`kafka-create-topics.sh`](../deploy/helm/claim-bridge/files/kafka-cr
 Locally everything runs in Docker Compose ([`deploy/docker-compose.yml`](../deploy/docker-compose.yml)) with SQL
 Server 2022, Kafka in KRaft mode, Redis, Azurite and Jaeger. In Azure the same images run on AKS
 ([Helm chart](../deploy/helm/claim-bridge)), SQL Server becomes Azure SQL, Kafka becomes Event Hubs with the Kafka
-endpoint, blob storage becomes a storage account plus an SFTP-enabled account for payer files. See
-[deployment.md](deployment.md).
+endpoint, blob storage becomes a storage account plus an SFTP-enabled account for payer files. Which one a service
+talks to is a setting (`Messaging:Provider`, `Storage:Provider`, `Secrets:Provider`) with the local option as the
+default, so the same chart also runs on any cluster with in-cluster dependencies, and the Azure resources can come
+from the optional Terraform modules or already exist. See [deployment.md](deployment.md).

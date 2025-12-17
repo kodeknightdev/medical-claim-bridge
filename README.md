@@ -21,9 +21,9 @@ real patient data.
   limits, encrypted PHI columns, PHI-free logs and events, audited PHI reads
 - Dashboard with KPIs, denial trends, ageing, top edits and payer health
 
-**Tech stack:** .NET 9 (ASP.NET Core, EF Core, YARP, OpenIddict, gRPC), Python 3.12 (FastAPI, scikit-learn),
-Angular 19, Kafka 3.9, SQL Server 2022, Redis, Azure Blob (Azurite), Docker Compose, Helm, Terraform (azurerm 4.x),
-Azure DevOps.
+**Tech stack:** .NET · ASP.NET Core · EF Core · OpenIddict · YARP · gRPC · Kafka · SQL Server · Redis · Azurite/Blob
+Storage · X12 EDI · Angular · ECharts · Python/FastAPI · scikit-learn · Docker · Helm/Kubernetes · Terraform (optional) ·
+Azure DevOps
 
 ## Getting started
 
@@ -113,5 +113,5 @@ angular-frontend       portal
 tools                  payer simulator, webhook receiver, seed, samples, e2e scenarios
 tests                  .NET test projects
 deploy                 compose, Helm chart, SQL Server and Kafka init, pipeline templates
-infra/terraform        Azure modules and environments
+infra/terraform        optional Azure modules and environments
 ```

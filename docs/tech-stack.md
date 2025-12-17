@@ -90,7 +90,7 @@ Both services pin direct dependencies in `requirements.in` and install the fully
 
 | Tool | Version | Used for |
 |---|---|---|
-| Terraform | `>= 1.11.0, < 1.14.0` (validated with 1.11.4) | Azure infrastructure |
+| Terraform (optional) | `>= 1.11.0, < 1.14.0` (validated with 1.11.4) | one way to create the Azure resources; nothing depends on it |
 | azurerm provider | 4.40.0 (locked) | AKS, ACR, Azure SQL, Redis, Event Hubs, Storage, Key Vault, Log Analytics |
 | Helm | 3.17.3 for lint and template | packaging the services for AKS |
 | Azure DevOps Pipelines | YAML, templates under `deploy/pipelines` | build, test, scan, image push, plan and deploy |

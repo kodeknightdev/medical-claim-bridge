@@ -85,11 +85,13 @@ the `Audit` category and counts them in `gateway.phi.reads`. Audit records hold 
 
 - Locally, secrets come from `.env` (copied from `.env.example`, git-ignored). The example values are clearly
   development-only, and Stripe is only ever `sk_test_xxx`.
-- In Kubernetes, the chart reads an existing secret (`global.existingSecret`) that is synced from Key Vault; the dev
-  values create a secret with `REPLACE_ME` placeholders.
-- Terraform creates no passwords: Azure SQL uses Entra ID authentication only, and the Key Vault holds the
-  application secrets that are added out of band. State lives in a remote backend that is not configured in the
-  repository.
+- On AKS (`Secrets:Provider=keyvault`) each pod mounts only its own secrets from Key Vault through the CSI driver,
+  one file per setting; nothing secret is stored in Kubernetes objects. On a cluster without Azure
+  (`values-local.yaml`) secrets are a Kubernetes Secret built from development values, and the PHI key comes from a
+  git-ignored file passed with `--set-file`.
+- Whether or not Terraform creates the Azure resources, it creates no passwords: Azure SQL uses Entra ID
+  authentication only, and the application secrets are added to Key Vault out of band. Terraform state, when used,
+  lives in a remote backend that is not configured in the repository.
 - The pipeline runs gitleaks against the repository ([`.gitleaks.toml`](../.gitleaks.toml)).
 
 ## Service-to-service
