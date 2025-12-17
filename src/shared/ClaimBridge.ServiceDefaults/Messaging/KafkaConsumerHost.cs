@@ -44,12 +44,12 @@ public sealed class KafkaConsumerHost<THandler, TDb>(
         var group = registration.RetryLane ? registration.Group + "-retry" : registration.Group;
 
         using var consumer = new ConsumerBuilder<string, string>(options.Value.Apply(new ConsumerConfig
-            {
-                GroupId = group,
-                AutoOffsetReset = AutoOffsetReset.Earliest,
-                EnableAutoCommit = false,
-                AllowAutoCreateTopics = false
-            }))
+        {
+            GroupId = group,
+            AutoOffsetReset = AutoOffsetReset.Earliest,
+            EnableAutoCommit = false,
+            AllowAutoCreateTopics = false
+        }))
             .SetErrorHandler((_, e) => logger.LogWarning("Kafka consumer {Group} error: {Reason}", group, e.Reason))
             .Build();
 

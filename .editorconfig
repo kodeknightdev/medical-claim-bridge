@@ -20,6 +20,9 @@ csharp_style_var_for_built_in_types = true:suggestion
 csharp_style_var_when_type_is_apparent = true:suggestion
 csharp_prefer_braces = when_multiline:suggestion
 dotnet_sort_system_directives_first = true
+# short initializers stay on one line; dotnet format would otherwise split every member
+csharp_new_line_before_members_in_object_initializers = false
+csharp_new_line_before_members_in_anonymous_types = false
 dotnet_style_qualification_for_field = false:suggestion
 dotnet_naming_rule.private_fields_underscore.symbols = private_fields
 dotnet_naming_rule.private_fields_underscore.style = underscore_prefix
