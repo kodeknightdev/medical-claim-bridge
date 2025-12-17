@@ -48,11 +48,11 @@ public class ArController(RemittanceDb db, TimeProvider clock) : ControllerBase
 
         var rows = await query.OrderBy(b => b.OpenedAt).Take(500).ToListAsync(ct);
         return rows.Select(b => new
-            {
-                b.ClaimId, b.ClaimNumber, b.PayerId, b.Charge, b.Paid, b.Adjusted, b.PatientResponsibility, b.PayerOutstanding,
-                Status = b.Status.ToString(), b.OpenedAt, Bucket = Ageing.BucketFor(b.OpenedAt, asOf),
-                AgeDays = asOf.DayNumber - DateOnly.FromDateTime(b.OpenedAt.UtcDateTime).DayNumber
-            })
+        {
+            b.ClaimId, b.ClaimNumber, b.PayerId, b.Charge, b.Paid, b.Adjusted, b.PatientResponsibility, b.PayerOutstanding,
+            Status = b.Status.ToString(), b.OpenedAt, Bucket = Ageing.BucketFor(b.OpenedAt, asOf),
+            AgeDays = asOf.DayNumber - DateOnly.FromDateTime(b.OpenedAt.UtcDateTime).DayNumber
+        })
             .Where(b => bucket is null || b.Bucket == bucket)
             .Take(200);
     }

@@ -24,8 +24,11 @@ public static class PayerAEndpoints
                 body.Services.Select((s, i) => new SimLine(i + 1, s.Code, s.Mods, s.Qty, s.Amount, DateOnly.Parse(s.Dos), s.Pos)).ToList());
 
             if (members.Find(claim.MemberId) is null)
-                return Results.Ok(new { status = "REJECTED", trackingId = (string?)null,
-                    errors = new[] { new { code = "A7-562", text = "Member id not found" } } });
+                return Results.Ok(new
+                {
+                    status = "REJECTED", trackingId = (string?)null,
+                    errors = new[] { new { code = "A7-562", text = "Member id not found" } }
+                });
 
             var record = store.Add(claim, AdjudicationFlow.Prefix(SeedIds.PayerA));
             if (scenario.SilentPayerA)

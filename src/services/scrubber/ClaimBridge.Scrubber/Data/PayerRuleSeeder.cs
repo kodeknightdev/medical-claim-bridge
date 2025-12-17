@@ -38,9 +38,9 @@ public static class PayerRuleSeeder
 
         PayerRule Rule(string payer, string code, string name, string scope, string condition, string severity,
             string message, string fix, bool enabled = true) => new()
-        {
-            PayerId = payer, RuleCode = code, Name = name, Scope = scope, ConditionJson = condition, Severity = severity,
-            Message = message, FixSuggestion = fix, Enabled = enabled, UpdatedAt = now, UpdatedBy = "seed"
-        };
+            {
+                PayerId = payer, RuleCode = code, Name = name, Scope = scope, ConditionJson = condition, Severity = severity,
+                Message = message, FixSuggestion = fix, Enabled = enabled, UpdatedAt = now, UpdatedBy = "seed"
+            };
     }
 }
